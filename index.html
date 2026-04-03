@@ -679,6 +679,8 @@
             font-weight: bold;
         }
     </style>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
 
@@ -856,6 +858,23 @@
         let audioCtx = null;
 
         // ---------------------------
+        // NAYA CODE: FIREBASE INITIALIZE
+        // ---------------------------
+        const firebaseConfig = {
+            apiKey: "AIzaSyDqoWrKntd-qMHTE8u7yd4-2M_C0SbjYHc",
+            authDomain: "gameadda-48c68.firebaseapp.com",
+            databaseURL: "https://gameadda-48c68-default-rtdb.firebaseio.com",
+            projectId: "gameadda-48c68",
+            storageBucket: "gameadda-48c68.appspot.com",
+            messagingSenderId: "36531557022",
+            appId: "1:36531557022:web:651ef8a1e67fa4a85fa0d3"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // ---------------------------
         // NAYA CODE: AUTH & MODES LOGIC
         // ---------------------------
         let usersDB = JSON.parse(localStorage.getItem('mathGameUsers')) || [];
@@ -865,7 +884,7 @@
         let currentUserMobile = null;
 
         // NAYA CODE: High Scores ko Local Storage se lane ke liye
-        let normalHighScores = JSON.parse(localStorage.getItem('normalHighScores')) || [0, 0, 0];
+        let normalHighScores = [0, 0, 0];
 
         function togglePassVisibility(id) {
             const input = document.getElementById(id);
@@ -924,10 +943,25 @@
                 document.getElementById('auth-overlay').style.display = 'none';
                 document.getElementById('mode-overlay').style.display = 'flex';
                 document.getElementById('menu-toggler').style.display = 'block'; // Show Hamburger
-                updateHighScoreDisplay(); // Card show hote hi scores fill ho jayenge
+                
+                // NAYA CODE: Login hote hi Firebase se top score lane ke liye call
+                fetchGlobalScores(); 
             } else {
                 alert("Galat Mobile Number ya Password!");
             }
+        }
+
+        // NAYA CODE: Firebase se score lake HTML me fill karne ka function
+        function fetchGlobalScores() {
+            database.ref('globalHighScores').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    normalHighScores = data;
+                } else {
+                    normalHighScores = [0, 0, 0];
+                }
+                updateHighScoreDisplay();
+            });
         }
 
         // NAYA CODE: High Scores ko Screen par load karne ke liye
@@ -937,7 +971,7 @@
             document.getElementById('high-score-3').innerHTML = normalHighScores[2];
         }
 
-        // NAYA CODE: Game over hone par score save karne ke liye
+        // NAYA CODE: Game over hone par score Firebase me save karne ke liye
         function checkAndSaveHighScore() {
             if (gameMode === 'normal') {
                 // Score ko array me add karke sort karo
@@ -945,9 +979,8 @@
                 normalHighScores.sort((a, b) => b - a); // Bade se chhota sort
                 normalHighScores = normalHighScores.slice(0, 3); // Sirf top 3 rakho
                 
-                // Save and update
-                localStorage.setItem('normalHighScores', JSON.stringify(normalHighScores));
-                updateHighScoreDisplay();
+                // Firebase me save kar rahe hain taki sabhi user dekhein
+                database.ref('globalHighScores').set(normalHighScores);
             }
         }
 
