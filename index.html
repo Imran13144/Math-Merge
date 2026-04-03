@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Merge Math Game</title>
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin: 0 0 5px 0;
+        }
+        .score-container {
+            background: #4A90E2;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            display: inline-block;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        /* 6x6 Grid aur Bade Boxes ke liye CSS badlav */
+        #grid {
+            width: 420px; /* Boxes bade karne ke liye width badha di */
+            height: 420px; /* Height bhi badha di */
+            background-color: #34495e;
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr); /* 4 ki jagah 6 columns */
+            grid-template-rows: repeat(6, 1fr); /* 4 ki jagah 6 rows */
+            gap: 8px;
+            padding: 10px;
+            box-sizing: border-box;
+            touch-action: none; /* Mobile swipe ke liye */
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            position: relative;
+            perspective: 800px; /* 3D Effect support karne ke liye */
+        }
+        .cell {
+            background-color: #2c3e50;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            /* Slide Animation ke liye transition */
+            transition: transform 0.15s ease-in-out, background-color 0.15s ease;
+            transform-style: preserve-3d;
+            position: relative;
+        }
+        
+        /* Merge Animation (Pop effect) */
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        /* NAYA CODE: Number Join hone par 3D box effect aur Chamak (Glow) */
+        @keyframes glowAndPop3D {
+            0% { 
+                transform: scale(1) translateZ(0px) rotateX(0deg);
+            }
+            50% { 
+                transform: scale(1.25) translateZ(30px) rotateX(10deg) rotateY(10deg); /* 3D Pop up */
+            }
+            100% { 
+                transform: scale(1) translateZ(0px) rotateX(0deg);
+            }
+        }
+
+        /* Chamak tab tak bani rahegi jab tak doosra merge na ho */
+        .pop-effect {
+            animation: glowAndPop3D 0.4s ease-in-out;
+            box-shadow: 0 0 15px #00e5ff, 0 0 30px #00e5ff !important; /* Persistent Light Chamak */
+            z-index: 5;
+        }
+        
+        /* Alag alag numbers ke liye mast rang */
+        .n1 { background-color: #1abc9c; }
+        .n2 { background-color: #2ecc71; }
+        .n3 { background-color: #3498db; }
+        .n4 { background-color: #9b59b6; }
+        .n5 { background-color: #f1c40f; color: #333; }
+        .n6 { background-color: #e67e22; }
+        .n7 { background-color: #e74c3c; }
+        .n8 { background-color: #e84393; }
+        .n9 { background-color: #6c5ce7; }
+        .n10 { background-color: #00cec9; }
+
+        /* Naye bante hue numbers ke color code styles */
+        .n12 { background-color: #fd79a8; }
+        .n16 { background-color: #e17055; }
+
+        .controls {
+            margin-top: 15px;
+            text-align: center;
+        }
+        button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .instructions {
+            margin-top: 10px;
+            color: #555;
+            font-size: 14px;
+        }
+
+        /* NAYA CODE: SVG overlay board ke upar free-form line kheechnay ke liye */
+        #swipe-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        #drawing-line {
+            stroke: #00e5ff;
+            stroke-width: 6;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 0 5px #00e5ff);
+            opacity: 0;
+            transition: opacity 0.1s;
+        }
+        /* Touch hone par highlight effect */
+        .selected-cell {
+            box-shadow: inset 0 0 10px rgba(255,255,255,0.8);
+            transform: scale(0.95);
+        }
+
+        /* NAYA CODE: Naye counters aur Game Over overlay ke liye CSS */
+        .header-stats {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 5px;
+        }
+        .stat-box {
+            background: #4A90E2;
+            color: white;
+            padding: 6px 15px;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        #game-over-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            border-radius: 10px;
+            z-index: 50;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        #game-over-overlay h2 {
+            color: #e74c3c;
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        #game-over-overlay p {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        /* NAYA CODE: Level Up 3D animation design */
+        #level-up-popup {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.5);
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #fff;
+            padding: 20px 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px #FFD700;
+            text-align: center;
+            z-index: 100;
+            font-weight: bold;
+            pointer-events: none;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s;
+            opacity: 0;
+        }
+        #level-up-popup.active {
+            transform: translate(-50%, -50%) scale(1.1) rotateY(360deg);
+            opacity: 1;
+        }
+        #level-up-popup h2 {
+            margin: 0;
+            font-size: 36px;
+            text-shadow: 2px 4px 5px rgba(0,0,0,0.3);
+        }
+        #level-up-popup p {
+            margin: 5px 0 0 0;
+            font-size: 20px;
+        }
+
+        /* NAYA CODE: Level box ke 1 second scroll animation ke liye */
+        @keyframes levelScroll {
+            0% { transform: translateY(0); }
+            25% { transform: translateY(-15px); }
+            50% { transform: translateY(10px); }
+            75% { transform: translateY(-5px); }
+            100% { transform: translateY(0); }
+        }
+        .level-scroll-anim {
+            animation: levelScroll 1s ease-in-out;
+        }
+
+        /* NAYA CODE: Sound on/off button ke liye CSS */
+        .sound-btn {
+            background-color: #9b59b6;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+        }
+
+        /* --------------------------- */
+        /* NAYA CODE: AUTH & MENU UI (Image Based Modification) */
+        /* --------------------------- */
+        
+        /* Background Animation for Home Screen */
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        #auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* NAYA CODE: Multiple game colors ko mix karke beautiful moving background banaya gaya hai */
+            background: linear-gradient(-45deg, #1abc9c, #2ecc71, #3498db, #9b59b6, #e67e22, #e74c3c);
+            background-size: 400% 400%;
+            animation: gradientShift 12s ease infinite;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Title Box for ROAT PKZ style header */
+        .game-title-box {
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .game-title-box h1 {
+            color: #ffcc00;
+            font-size: 40px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #ffcc00, 2px 2px 0px #000;
+            margin: 0;
+        }
+        .game-title-box span {
+            color: #ffffff;
+            font-size: 14px;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+        }
+
+        .auth-card {
+            background: #0f1c24;
+            padding: 30px;
+            border-radius: 5px;
+            border: 3px solid #b38f00;
+            box-shadow: 0 0 25px rgba(255, 204, 0, 0.3), inset 0 0 15px rgba(0,0,0,0.8);
+            width: 320px;
+            text-align: center;
+            position: relative;
+        }
+        
+        /* Metallic Corner Borders */
+        .auth-card::before {
+            content: '';
+            position: absolute;
+            top: -5px; left: -5px; right: -5px; bottom: -5px;
+            border: 1px solid #ffcc00;
+            pointer-events: none;
+            border-radius: 5px;
+        }
+        
+        .auth-card h2 {
+            margin-top: 0;
+            color: #ffcc00;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            font-size: 24px;
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 2px #000;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+            position: relative;
+        }
+        
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            color: #ffcc00;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            background: #080f14;
+            border: 1px solid #1a3344;
+            border-radius: 3px;
+            box-sizing: border-box;
+            font-size: 14px;
+            color: #00e5ff;
+            outline: none;
+            text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);
+            transition: border 0.3s;
+        }
+        
+        .input-group input:focus {
+            border: 1px solid #00e5ff;
+        }
+        
+        .eye-icon {
+            position: absolute;
+            right: 10px;
+            top: 28px;
+            cursor: pointer;
+            color: #ffcc00;
+            font-size: 18px;
+        }
+        
+        .auth-btn {
+            width: 100%;
+            background: linear-gradient(to bottom, #ffdb4d, #b38f00);
+            color: #000;
+            padding: 12px;
+            border-radius: 3px;
+            font-size: 18px;
+            margin-top: 15px;
+            border: 1px solid #ffe680;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            box-shadow: 0 4px 0px #665200, 0 5px 10px rgba(0,0,0,0.5);
+            transition: transform 0.1s;
+        }
+        
+        .auth-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0px #665200, 0 2px 5px rgba(0,0,0,0.5);
+        }
+        
+        .switch-text {
+            margin-top: 20px;
+            font-size: 13px;
+            color: #999;
+        }
+        
+        .switch-text span {
+            color: #00e5ff;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        /* Extra Links style like Forgot Pass? */
+        .extra-links {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            margin-top: 5px;
+            color: #ffcc00;
+        }
+        
+        /* Mode Selection Styles */
+        #mode-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* NAYA BADLAV: Signup screen wala animated background home screen me apply kiya */
+            background: linear-gradient(-45deg, #1abc9c, #2ecc71, #3498db, #9b59b6, #e67e22, #e74c3c);
+            background-size: 400% 400%;
+            animation: gradientShift 12s ease infinite;
+            z-index: 900;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .mode-container {
+            text-align: center;
+            position: relative;
+        }
+        .mode-container h2 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+        .mode-btn {
+            display: block;
+            width: 260px;
+            padding: 20px;
+            margin: 15px auto;
+            border-radius: 10px;
+            font-size: 22px;
+            font-weight: bold;
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            transition: transform 0.2s;
+        }
+        .mode-btn:active {
+            transform: scale(0.98);
+        }
+        .normal-btn {
+            background-color: #2ecc71;
+        }
+        .pro-btn {
+            background-color: #e74c3c;
+        }
+
+        /* Back Button CSS */
+        .back-btn {
+            background-color: #7f8c8d;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --------------------------- */
+        /* NAYA CODE: HIGH SCORE BOXES IN MENU */
+        /* --------------------------- */
+        .highscore-title {
+            color: #333;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 25px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        .highscore-row {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        .hs-box {
+            background: #ffffff;
+            width: 90px;
+            padding: 12px 5px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border: 2px solid #ddd;
+            text-align: center;
+        }
+        .hs-box .rank-text {
+            font-size: 12px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .hs-box .score-text {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        /* Top 1, 2, 3 ke special color gradients */
+        .hs-first { border-color: #FFD700; background: linear-gradient(to bottom, #ffffff, #fffdf0); }
+        .hs-second { border-color: #C0C0C0; background: linear-gradient(to bottom, #ffffff, #f7f7f7); }
+        .hs-third { border-color: #CD7F32; background: linear-gradient(to bottom, #ffffff, #faf3ee); }
+        
+        .hs-first .score-text { color: #d4af37; }
+        .hs-first .rank-text { color: #d4af37; }
+
+        /* --------------------------- */
+        /* NAYA CODE: SIDE MENU & PROFILE POPUP */
+        /* --------------------------- */
+        
+        /* Hamburger Button */
+        .menu-toggle-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #b38f00;
+            color: black;
+            border: 1px solid #ffcc00;
+            padding: 10px 15px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1001;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        
+        /* Sliding Sidebar Menu */
+        .side-menu {
+            position: fixed;
+            top: 0;
+            right: -280px;
+            width: 250px;
+            height: 100%;
+            background: #0f1c24;
+            border-left: 3px solid #b38f00;
+            z-index: 1002;
+            transition: right 0.3s ease;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 15px;
+            box-sizing: border-box;
+        }
+        .side-menu.active {
+            right: 0;
+        }
+        .side-menu h3 {
+            color: #ffcc00;
+            text-align: center;
+            text-transform: uppercase;
+            border-bottom: 1px solid #1a3344;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .side-menu-btn {
+            background: #080f14;
+            color: #ffcc00;
+            border: 1px solid #1a3344;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 15px;
+            font-weight: bold;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .side-menu-btn:hover {
+            background: #11212b;
+            border-color: #00e5ff;
+            color: #00e5ff;
+        }
+        .close-menu-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: auto;
+        }
+
+        /* Profile Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-card {
+            background: #0f1c24;
+            width: 320px;
+            padding: 25px;
+            border-radius: 5px;
+            border: 3px solid #b38f00;
+            box-shadow: 0 0 25px rgba(255, 204, 0, 0.3);
+            text-align: center;
+            position: relative;
+        }
+        .modal-card h2 {
+            color: #ffcc00;
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+        .profile-pic-container {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 20px auto;
+            border-radius: 50%;
+            border: 3px solid #00e5ff;
+            overflow: hidden;
+            background: #080f14;
+        }
+        .profile-pic-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .profile-pic-container .upload-btn {
+            position: absolute;
+            bottom: 0; left: 0; width: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 11px;
+            padding: 2px 0;
+            cursor: pointer;
+        }
+        .modal-card .input-group input {
+            color: #ffffff;
+            background: #080f14;
+        }
+        .modal-close-btn {
+            position: absolute;
+            top: 10px; right: 10px;
+            color: #ffcc00;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <button class="menu-toggle-btn" id="menu-toggler" onclick="toggleSidebar(true)" style="display:none;">☰ MENU</button>
+
+    <div class="side-menu" id="sidebar-menu">
+        <h3>Game Panel</h3>
+        <button class="side-menu-btn" onclick="openProfileModal()">👤 Profile</button>
+        <button class="side-menu-btn" onclick="alert('Link copied to clipboard! Aap dosto ko share karein.')">🔗 Share Button</button>
+        <button class="side-menu-btn" onclick="alert('Rules: Ek jese numbers ko merge karke bada number banayein. Time limit me score complete karein.')">📜 Game Rules</button>
+        <button class="side-menu-btn" onclick="alert('Support: Aap hume help@mergegame.com par mail kar sakte hain.')">📞 Help and Support</button>
+        <button class="side-menu-btn" onclick="alert('T&C: Yeh game sirf manoranjan ke liye hai. Data aapke device pe save hota hai.')">📋 Term and Conditions</button>
+        <button class="close-menu-btn" onclick="toggleSidebar(false)">Close Menu</button>
+    </div>
+
+    <div class="modal-overlay" id="profile-modal">
+        <div class="modal-card">
+            <span class="modal-close-btn" onclick="closeProfileModal()">&times;</span>
+            <h2>Update Profile</h2>
+            
+            <div class="profile-pic-container">
+                <img id="profile-img" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profile">
+                <label for="pic-upload" class="upload-btn">Change</label>
+                <input type="file" id="pic-upload" style="display:none;" accept="image/*" onchange="handleProfilePic(this)">
+            </div>
+
+            <div class="input-group">
+                <label>User Name</label>
+                <input type="text" id="prof-name" readonly>
+            </div>
+            <div class="input-group">
+                <label>Mobile Number</label>
+                <input type="tel" id="prof-mobile" placeholder="Naya Mobile Number">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="prof-pass" placeholder="Naya Password set karein">
+                <span class="eye-icon" style="top:25px;" onclick="togglePassVisibility('prof-pass')">👁️</span>
+            </div>
+            
+            <button class="auth-btn" onclick="saveProfileChanges()">Save Profile</button>
+        </div>
+    </div>
+
+    <div id="auth-overlay">
+        <div class="game-title-box">
+            <h1>MATH MERGE</h1>
+            <span>GAME PORTAL</span>
+        </div>
+
+        <div class="auth-card" id="signup-card">
+            <h2>Sign Up</h2>
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" id="signup-name" placeholder="Apna naam likhein">
+            </div>
+            <div class="input-group">
+                <label>Mobile Number</label>
+                <input type="tel" id="signup-mobile" placeholder="Mobile number dalein">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="signup-pass" placeholder="Password set karein">
+                <span class="eye-icon" onclick="togglePassVisibility('signup-pass')">👁️</span>
+            </div>
+            <button class="auth-btn" onclick="handleSignup()">Register</button>
+            <div class="switch-text">Pehle se account hai? <span onclick="switchAuth('login')">Login karein</span></div>
+        </div>
+
+        <div class="auth-card" id="login-card" style="display: none;">
+            <h2>Log In</h2>
+            <div class="input-group">
+                <label>Mobile Number</label>
+                <input type="tel" id="login-mobile" placeholder="Registered mobile number">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="login-pass" placeholder="Apna password dalein">
+                <span class="eye-icon" onclick="togglePassVisibility('login-pass')">👁️</span>
+                <div class="extra-links">
+                    <span></span>
+                    <span>Forgot your password?</span>
+                </div>
+            </div>
+            <button class="auth-btn" onclick="handleLogin()">Log In</button>
+            <div class="switch-text">Account nahi hai? <span onclick="switchAuth('signup')">Sign Up karein</span></div>
+        </div>
+    </div>
+
+    <div id="mode-overlay">
+        <div class="mode-container">
+            <h2>Select Game Mode</h2>
+            <button class="mode-btn normal-btn" onclick="startGameMode('normal')">Normal Play</button>
+            <button class="mode-btn pro-btn" onclick="startGameMode('pro')">Pro Play</button>
+
+            <div class="highscore-title">🏆 Normal Mode Top Scores 🏆</div>
+            <div class="highscore-row">
+                <div class="hs-box hs-first">
+                    <div class="rank-text">🥇 First</div>
+                    <div class="score-text" id="high-score-1">0</div>
+                </div>
+                <div class="hs-box hs-second">
+                    <div class="rank-text">🥈 Second</div>
+                    <div class="score-text" id="high-score-2">0</div>
+                </div>
+                <div class="hs-box hs-third">
+                    <div class="rank-text">🥉 Third</div>
+                    <div class="score-text" id="high-score-3">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1>Merge Math Numbers</h1>
+        <div class="header-stats">
+            <div class="score-container">Score: <span id="score">0</span></div>
+            <div class="stat-box" id="timer-box" style="background-color: #e67e22;">Time: <span id="timer">60</span>s</div>
+            <div class="stat-box" id="level-box" style="background-color: #2ecc71;">Level: <span id="level">1</span></div>
+            <button class="sound-btn" id="sound-toggle" onclick="toggleSound()">🔊 Sound: ON</button>
+            <button class="back-btn" id="back-to-menu" onclick="backToMenu()">⬅ Back</button>
+        </div>
+    </div>
+
+    <div id="grid">
+        <svg id="swipe-canvas">
+            <path id="drawing-line" d="" />
+        </svg>
+        
+        <div id="game-over-overlay">
+            <h2>GAME OVER</h2>
+            <p>Aapka samay samapt ho gaya!</p>
+            <button onclick="resetGame()" style="background-color: #2ecc71;">Dobara Khele</button>
+        </div>
+
+        <div id="level-up-popup">
+            <h2>LEVEL UP!</h2>
+            <p>Aap Level <span id="popup-level-val">2</span> par aa gaye</p>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="resetGame()">Naya Game</button>
+        <div class="instructions">Mobile me <b>Ungli se swipe</b> karein aur computer me <b>Arrow keys</b> dabayein!</div>
+    </div>
+
+    <script>
+        const gridDisplay = document.getElementById('grid');
+        const scoreDisplay = document.getElementById('score');
+        const swipeCanvas = document.getElementById('swipe-canvas');
+        const drawingLine = document.getElementById('drawing-line');
+        
+        // NAYA CODE: Naye DOM elements
+        const timerDisplay = document.getElementById('timer');
+        const levelDisplay = document.getElementById('level');
+        const gameOverOverlay = document.getElementById('game-over-overlay');
+        
+        // NAYA CODE: Level Up ke elements
+        const levelUpPopup = document.getElementById('level-up-popup');
+        const popupLevelVal = document.getElementById('popup-level-val');
+        const levelBox = document.getElementById('level-box');
+        
+        const size = 6; /* 4 ki jagah 6x6 grid size */
+        let squares = [];
+        let score = 0;
+
+        // NAYA CODE: Game rules ke variables
+        let level = 1;
+        let timeLeft = 60;
+        let timerId = null;
+        let isGameOver = false;
+
+        // NAYA CODE: Sound mechanism variables aur functions
+        let isSoundOn = true;
+        let audioCtx = null;
+
+        // ---------------------------
+        // NAYA CODE: AUTH & MODES LOGIC
+        // ---------------------------
+        let usersDB = JSON.parse(localStorage.getItem('mathGameUsers')) || [];
+        let gameMode = 'pro'; // Default pro play
+        
+        // NAYA CODE: Logged-in User save rakhne ke liye
+        let currentUserMobile = null;
+
+        // NAYA CODE: High Scores ko Local Storage se lane ke liye
+        let normalHighScores = JSON.parse(localStorage.getItem('normalHighScores')) || [0, 0, 0];
+
+        function togglePassVisibility(id) {
+            const input = document.getElementById(id);
+            if (input.type === "password") {
+                input.type = "text";
+            } else {
+                input.type = "password";
+            }
+        }
+
+        function switchAuth(type) {
+            if (type === 'login') {
+                document.getElementById('signup-card').style.display = 'none';
+                document.getElementById('login-card').style.display = 'block';
+            } else {
+                document.getElementById('signup-card').style.display = 'block';
+                document.getElementById('login-card').style.display = 'none';
+            }
+        }
+
+        function handleSignup() {
+            const name = document.getElementById('signup-name').value.trim();
+            const mobile = document.getElementById('signup-mobile').value.trim();
+            const pass = document.getElementById('signup-pass').value.trim();
+
+            if (!name || !mobile || !pass) {
+                alert("Kripya sari details bharein!");
+                return;
+            }
+
+            const existingUser = usersDB.find(u => u.mobile === mobile);
+            if (existingUser) {
+                alert("Yeh mobile number pehle se registered hai!");
+                return;
+            }
+
+            // NAYA CODE: Profile pic add kar di users profile list ke saath
+            usersDB.push({ name, mobile, pass, profilePic: "https://cdn-icons-png.flaticon.com/512/149/149071.png" });
+            localStorage.setItem('mathGameUsers', JSON.stringify(usersDB));
+            alert("Signup safal raha! Ab login karein.");
+            switchAuth('login');
+        }
+
+        function handleLogin() {
+            const mobile = document.getElementById('login-mobile').value.trim();
+            const pass = document.getElementById('login-pass').value.trim();
+
+            if (!mobile || !pass) {
+                alert("Sari details bharna zaroori hai!");
+                return;
+            }
+
+            const user = usersDB.find(u => u.mobile === mobile && u.pass === pass);
+            if (user) {
+                currentUserMobile = mobile; // Current active session
+                document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('mode-overlay').style.display = 'flex';
+                document.getElementById('menu-toggler').style.display = 'block'; // Show Hamburger
+                updateHighScoreDisplay(); // Card show hote hi scores fill ho jayenge
+            } else {
+                alert("Galat Mobile Number ya Password!");
+            }
+        }
+
+        // NAYA CODE: High Scores ko Screen par load karne ke liye
+        function updateHighScoreDisplay() {
+            document.getElementById('high-score-1').innerHTML = normalHighScores[0];
+            document.getElementById('high-score-2').innerHTML = normalHighScores[1];
+            document.getElementById('high-score-3').innerHTML = normalHighScores[2];
+        }
+
+        // NAYA CODE: Game over hone par score save karne ke liye
+        function checkAndSaveHighScore() {
+            if (gameMode === 'normal') {
+                // Score ko array me add karke sort karo
+                normalHighScores.push(score);
+                normalHighScores.sort((a, b) => b - a); // Bade se chhota sort
+                normalHighScores = normalHighScores.slice(0, 3); // Sirf top 3 rakho
+                
+                // Save and update
+                localStorage.setItem('normalHighScores', JSON.stringify(normalHighScores));
+                updateHighScoreDisplay();
+            }
+        }
+
+        function startGameMode(mode) {
+            gameMode = mode;
+            document.getElementById('mode-overlay').style.display = 'none';
+            
+            const timerBox = document.getElementById('timer-box');
+            if (mode === 'normal') {
+                timerBox.style.display = 'none';
+            } else {
+                timerBox.style.display = 'block';
+            }
+            
+            resetGame();
+        }
+
+        function backToMenu() {
+            clearInterval(timerId);
+            checkAndSaveHighScore(); // Agar game beech me leave kiya hai to bhi score save ho
+            document.getElementById('mode-overlay').style.display = 'flex';
+        }
+        
+        // ---------------------------
+        // NAYA CODE: SIDE MENU & PROFILE POPUP FUNCTIONS
+        // ---------------------------
+        function toggleSidebar(show) {
+            const sidebar = document.getElementById('sidebar-menu');
+            if (show) sidebar.classList.add('active');
+            else sidebar.classList.remove('active');
+        }
+
+        function openProfileModal() {
+            toggleSidebar(false); // Menu close karein
+            
+            const user = usersDB.find(u => u.mobile === currentUserMobile);
+            if (user) {
+                document.getElementById('prof-name').value = user.name;
+                document.getElementById('prof-mobile').value = user.mobile;
+                document.getElementById('prof-pass').value = user.pass;
+                document.getElementById('profile-img').src = user.profilePic || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+                
+                document.getElementById('profile-modal').style.display = 'flex';
+            }
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profile-modal').style.display = 'none';
+        }
+
+        // Photo Upload Logic
+        function handleProfilePic(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profile-img').src = e.target.result;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Profile details save krne ke liye logic
+        function saveProfileChanges() {
+            const userIdx = usersDB.findIndex(u => u.mobile === currentUserMobile);
+            const newMobile = document.getElementById('prof-mobile').value.trim();
+            const newPass = document.getElementById('prof-pass').value.trim();
+            const profilePicData = document.getElementById('profile-img').src;
+
+            if (!newMobile || !newPass) {
+                alert("Mobile number aur password khali nahi ho sakte!");
+                return;
+            }
+
+            // Mobile checking duplicate case
+            const duplicateMobile = usersDB.find((u, idx) => u.mobile === newMobile && idx !== userIdx);
+            if (duplicateMobile) {
+                alert("Yeh mobile number pehle se koi doosra user use kar raha hai!");
+                return;
+            }
+
+            // Save details in local DB
+            usersDB[userIdx].mobile = newMobile;
+            usersDB[userIdx].pass = newPass;
+            usersDB[userIdx].profilePic = profilePicData;
+            
+            currentUserMobile = newMobile; // Session update
+            localStorage.setItem('mathGameUsers', JSON.stringify(usersDB));
+            
+            alert("Profile successfully update ho gayi!");
+            closeProfileModal();
+        }
+        // ---------------------------
+
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function toggleSound() {
+            isSoundOn = !isSoundOn;
+            const btn = document.getElementById('sound-toggle');
+            if (isSoundOn) {
+                btn.innerHTML = "🔊 Sound: ON";
+                btn.style.background = "#9b59b6";
+            } else {
+                btn.innerHTML = "🔈 Sound: OFF";
+                btn.style.background = "#95a5a6";
+            }
+        }
+
+        function playSwipeSoundLoud() {
+            if (!isSoundOn) return;
+            try {
+                initAudioContext();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'sawtooth'; // Loud aur sharp sound ke liye
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.08); // Pitch up effect
+                
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime); // Volume tez
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.08);
+            } catch (error) {
+                console.log("Audio not supported");
+            }
+        }
+
+        function playJoinSoundLoud() {
+            if (!isSoundOn) return;
+            try {
+                initAudioContext();
+                const osc1 = audioCtx.createOscillator();
+                const osc2 = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc1.type = 'sine';
+                osc2.type = 'square'; // Do frequency ko mix karke louder chime banega
+                
+                osc1.frequency.setValueAtTime(500, audioCtx.currentTime);
+                osc2.frequency.setValueAtTime(1000, audioCtx.currentTime);
+                
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime); // High volume
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                
+                osc1.connect(gain);
+                osc2.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc1.start();
+                osc2.start();
+                osc1.stop(audioCtx.currentTime + 0.3);
+                osc2.stop(audioCtx.currentTime + 0.3);
+            } catch (error) {
+                console.log("Audio not supported");
+            }
+        }
+
+        // NAYA CODE: Level up hone per badiya sa audio play karne ke liye function
+        function playLevelUpSound() {
+            if (!isSoundOn) return; // Silent if sound is turned off
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Beep series generate karna ek badhiya game feel ke liye
+                const playBeep = (freq, startTime, duration) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = 'triangle'; 
+                    osc.frequency.setValueAtTime(freq, startTime);
+                    
+                    gain.gain.setValueAtTime(0.1, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc.start(startTime);
+                    osc.stop(startTime + duration);
+                };
+                
+                // 3 ascending tones ka music combination
+                playBeep(400, audioCtx.currentTime, 0.15);
+                playBeep(600, audioCtx.currentTime + 0.15, 0.15);
+                playBeep(800, audioCtx.currentTime + 0.30, 0.3);
+            } catch (error) {
+                console.log("Audio API not supported by browser.");
+            }
+        }
+
+        // Board banane aur har box me random 1 se 5 tak number bharne ke liye
+        function createBoard() {
+            // Sirf grid cells clean ho, SVG overlay safe rahe
+            const svgLayer = document.getElementById('swipe-canvas');
+            gridDisplay.innerHTML = '';
+            gridDisplay.appendChild(svgLayer);
+            
+            squares = [];
+            for (let i = 0; i < size * size; i++) { /* Ab yeh 36 cells generate karega */
+                let cell = document.createElement('div');
+                cell.classList.add('cell');
+                
+                // Starting me random number generate karna par level restriction ke sath
+                let randomVal = getNewTileValue();
+                cell.innerHTML = randomVal;
+                cell.classList.add('n' + randomVal);
+                
+                gridDisplay.appendChild(cell);
+                squares.push(cell);
+            }
+        }
+
+        // NAYA CODE: Level ke hisab se tiles value allow karna (Rule 2 se 10 tak ke removal filters)
+        function getNewTileValue() {
+            let val;
+            let attempts = 0;
+            
+            while (attempts < 50) {
+                val = Math.floor(Math.random() * 5) + 1; // Base tiles pool
+                
+                // Rule filters jo numbers remove karte hain
+                if (level >= 10 && val === 9) { attempts++; continue; }
+                if (level >= 9 && val === 8) { attempts++; continue; }
+                if (level >= 8 && val === 7) { attempts++; continue; }
+                if (level >= 7 && val === 6) { attempts++; continue; }
+                if (level >= 6 && val === 5) { attempts++; continue; }
+                if (level >= 5 && val === 4) { attempts++; continue; }
+                if (level >= 4 && val === 3) { attempts++; continue; }
+                if (level >= 3 && val === 2) { attempts++; continue; }
+                if (level >= 2 && val === 1) { attempts++; continue; }
+                
+                return val; // Agar filter pass ho gaya toh value return hogi
+            }
+            // Fallback: Agar random generation loop bohot lamba chala to level based default return
+            return level + 1;
+        }
+
+        // Blank boxes ko dobara chote numbers se bharna
+        function refillGrid() {
+            let emptySpaces = false;
+            for (let i = 0; i < squares.length; i++) {
+                if (squares[i].innerHTML === '' || squares[i].innerHTML === '0') {
+                    // Refill tiles are restricted by level rules
+                    let randomVal = getNewTileValue();
+                    squares[i].innerHTML = randomVal;
+                    emptySpaces = true;
+                }
+            }
+            updateStyles();
+            return emptySpaces;
+        }
+
+        // NAYA CODE: Timer mechanism control handle karne ke liye
+        function startTimerSystem() {
+            clearInterval(timerId);
+            
+            // Agar normal mode hai to timer start hi mat karo
+            if (gameMode === 'normal') return;
+
+            timerId = setInterval(() => {
+                if (!isGameOver) {
+                    timeLeft--;
+                    timerDisplay.innerHTML = timeLeft;
+                    
+                    if (timeLeft <= 0) {
+                        triggerGameOver();
+                    }
+                }
+            }, 1000);
+        }
+
+        function resetTimerForCurrentLevel() {
+            // Agar normal mode hai to timer reset ki zaroorat nahi
+            if (gameMode === 'normal') return;
+
+            if (level === 1) timeLeft = 60;
+            else if (level === 2) timeLeft = 50;
+            else if (level === 3) timeLeft = 40;
+            else if (level === 4) timeLeft = 30;
+            else if (level === 5) timeLeft = 20;
+            else timeLeft = 10; // Level 6 se 10 tak starting time 10 seconds hai
+            
+            timerDisplay.innerHTML = timeLeft;
+        }
+
+        // NAYA CODE: Board se purane blocked number hatana
+        function removeBlockedTilesFromBoard() {
+            for (let i = 0; i < squares.length; i++) {
+                let currentVal = parseInt(squares[i].innerHTML);
+                let isBlocked = false;
+                
+                if (level >= 10 && currentVal === 9) isBlocked = true;
+                if (level >= 9 && currentVal === 8) isBlocked = true;
+                if (level >= 8 && currentVal === 7) isBlocked = true;
+                if (level >= 7 && currentVal === 6) isBlocked = true;
+                if (level >= 6 && currentVal === 5) isBlocked = true;
+                if (level >= 5 && currentVal === 4) isBlocked = true;
+                if (level >= 4 && currentVal === 3) isBlocked = true;
+                if (level >= 3 && currentVal === 2) isBlocked = true;
+                if (level >= 2 && currentVal === 1) isBlocked = true;
+
+                if (isBlocked) {
+                    let newVal = getNewTileValue();
+                    squares[i].innerHTML = newVal;
+                    // Chhota animation show ho change hone ka
+                    squares[i].style.transform = 'scale(0.2)';
+                    setTimeout(() => {
+                        squares[i].style.transform = 'scale(1)';
+                    }, 50);
+                }
+            }
+            updateStyles();
+        }
+
+        // NAYA CODE: Level up pop up show karne ke liye
+        function showLevelUpPopup() {
+            popupLevelVal.innerHTML = level;
+            
+            // Sound play karna
+            playLevelUpSound();
+
+            // Level Box ka animation add karna
+            levelBox.classList.add('level-scroll-anim');
+            setTimeout(() => {
+                levelBox.classList.remove('level-scroll-anim');
+            }, 1000); // 1 Second ke bad hat jayega aur normal ho jayega
+
+            levelUpPopup.style.display = 'block';
+            setTimeout(() => {
+                levelUpPopup.classList.add('active');
+            }, 10);
+
+            // 1.5 seconds ke baad popup automatic hat jaye
+            setTimeout(() => {
+                levelUpPopup.classList.remove('active');
+                setTimeout(() => {
+                    levelUpPopup.style.display = 'none';
+                }, 500);
+            }, 1500);
+        }
+
+        function checkLevelProgression() {
+            let oldLevel = level;
+            
+            if (score >= 5500) level = 10;
+            else if (score >= 3400) level = 9;
+            else if (score >= 2100) level = 8;
+            else if (score >= 1300) level = 7;
+            else if (score >= 800) level = 6;
+            else if (score >= 500) level = 5;
+            else if (score >= 300) level = 4;
+            else if (score >= 200) level = 3;
+            else if (score >= 100) level = 2;
+            
+            levelDisplay.innerHTML = level;
+            
+            // Agar level change hua hai toh timer restart system call hoga
+            if (oldLevel !== level) {
+                resetTimerForCurrentLevel();
+                showLevelUpPopup(); // Show 3D Pop up
+                removeBlockedTilesFromBoard(); // Purane tiles hatae jayen
+            }
+        }
+
+        function triggerGameOver() {
+            isGameOver = true;
+            clearInterval(timerId);
+            checkAndSaveHighScore(); // Game over hone par score check aur save karo
+            gameOverOverlay.style.display = 'flex';
+        }
+
+        // Swipe Left
+        function moveLeft() {
+            let moved = false;
+            for (let i = 0; i < size * size; i++) {
+                if (i % size === 0) {
+                    let row = [];
+                    for (let j = 0; j < size; j++) {
+                        row.push(parseInt(squares[i+j].innerHTML) || 0);
+                    }
+
+                    let originalRow = [...row];
+                    let filteredRow = row.filter(num => num);
+                    let missing = size - filteredRow.length;
+                    let zeros = Array(missing).fill('');
+                    let newRow = filteredRow.concat(zeros);
+
+                    for (let j = 0; j < size; j++) {
+                        squares[i+j].innerHTML = newRow[j];
+                    }
+                    
+                    if(originalRow.join(',') !== newRow.join(',')) moved = true;
+                }
+            }
+            return moved;
+        }
+
+        // Swipe Right
+        function moveRight() {
+            let moved = false;
+            for (let i = 0; i < size * size; i++) {
+                if (i % size === 0) {
+                    let row = [];
+                    for (let j = 0; j < size; j++) {
+                        row.push(parseInt(squares[i+j].innerHTML) || 0);
+                    }
+
+                    let originalRow = [...row];
+                    let filteredRow = row.filter(num => num);
+                    let missing = size - filteredRow.length;
+                    let zeros = Array(missing).fill('');
+                    let newRow = zeros.concat(filteredRow);
+
+                    for (let j = 0; j < size; j++) {
+                        squares[i+j].innerHTML = newRow[j];
+                    }
+
+                    if(originalRow.join(',') !== newRow.join(',')) moved = true;
+                }
+            }
+            return moved;
+        }
+
+        // Swipe Down
+        function moveDown() {
+            let moved = false;
+            for (let i = 0; i < size; i++) {
+                let column = [];
+                for (let j = 0; j < size; j++) {
+                    column.push(parseInt(squares[i + (j * size)].innerHTML) || 0);
+                }
+
+                let originalCol = [...column];
+                let filteredCol = column.filter(num => num);
+                let missing = size - filteredCol.length;
+                let zeros = Array(missing).fill('');
+                let newCol = zeros.concat(filteredCol);
+
+                for (let j = 0; j < size; j++) {
+                    squares[i + (j * size)].innerHTML = newCol[j];
+                }
+
+                if(originalCol.join(',') !== newCol.join(',')) moved = true;
+            }
+            return moved;
+        }
+
+        // Swipe Up
+        function moveUp() {
+            let moved = false;
+            for (let i = 0; i < size; i++) {
+                let column = [];
+                for (let j = 0; j < size; j++) {
+                    column.push(parseInt(squares[i + (j * size)].innerHTML) || 0);
+                }
+
+                let originalCol = [...column];
+                let filteredCol = column.filter(num => num);
+                let missing = size - filteredCol.length;
+                let zeros = Array(missing).fill('');
+                let newCol = filteredCol.concat(zeros);
+
+                for (let j = 0; j < size; j++) {
+                    squares[i + (j * size)].innerHTML = newCol[j];
+                }
+
+                if(originalCol.join(',') !== newCol.join(',')) moved = true;
+            }
+            return moved;
+        }
+
+        // Same Numbers ko jodna (Left/Right swipe ke baad)
+        function combineRow() {
+            for (let i = 0; i < (size * size) - 1; i++) {
+                if ((i+1) % size !== 0 && squares[i].innerHTML === squares[i+1].innerHTML && squares[i].innerHTML !== '') {
+                    let combinedTotal = parseInt(squares[i].innerHTML) + parseInt(squares[i+1].innerHTML);
+                    squares[i].innerHTML = combinedTotal;
+                    squares[i+1].innerHTML = '';
+                    score += combinedTotal;
+                    scoreDisplay.innerHTML = score;
+                    
+                    checkLevelProgression(); // Check if score reached new level
+                    
+                    // Merge Animation trigger karne ke liye class add ki
+                    triggerPopEffect(squares[i]);
+                }
+            }
+            updateStyles();
+        }
+
+        // Same Numbers ko jodna (Up/Down swipe ke baad)
+        function combineColumn() {
+            for (let i = 0; i < size * (size - 1); i++) {
+                if (squares[i].innerHTML === squares[i+size].innerHTML && squares[i].innerHTML !== '') {
+                    let combinedTotal = parseInt(squares[i].innerHTML) + parseInt(squares[i+size].innerHTML);
+                    squares[i].innerHTML = combinedTotal;
+                    squares[i+size].innerHTML = '';
+                    score += combinedTotal;
+                    scoreDisplay.innerHTML = score;
+                    
+                    checkLevelProgression(); // Check if score reached new level
+                    
+                    // Merge Animation trigger karne ke liye class add ki
+                    triggerPopEffect(squares[i]);
+                }
+            }
+            updateStyles();
+        }
+
+        // Pop effect handle karne ka naya function
+        // NAYA CODE: Chamak pichli hat jaye aur nayi bani rahe jab tak dusra join na ho.
+        function triggerPopEffect(element) {
+            // Pehle se kisi chamak rahe box se chamak hatana
+            const existingGlowing = document.querySelector('.pop-effect');
+            if (existingGlowing) {
+                existingGlowing.classList.remove('pop-effect');
+            }
+            
+            // Current box ko chamkana
+            element.classList.add('pop-effect');
+        }
+
+        // Rang badalne ke liye
+        function updateStyles() {
+            for (let i = 0; i < squares.length; i++) {
+                let hasGlow = squares[i].classList.contains('pop-effect');
+                squares[i].className = 'cell';
+                let val = squares[i].innerHTML;
+                if (val !== '' && val !== '0') {
+                    squares[i].classList.add('n' + val);
+                }
+                // Glow class save rakhna agar pehle se active thi
+                if(hasGlow) {
+                    squares[i].classList.add('pop-effect');
+                }
+            }
+        }
+
+        // Keyboard Controls
+        function control(e) {
+            if (isGameOver) return; // Prevent moves after game over
+            
+            let acted = false;
+            if (e.keyCode === 37) { moveLeft(); combineRow(); moveLeft(); acted = true; }
+            else if (e.keyCode === 38) { moveUp(); combineColumn(); moveUp(); acted = true; }
+            else if (e.keyCode === 39) { moveRight(); combineRow(); moveRight(); acted = true; }
+            else if (e.keyCode === 40) { moveDown(); combineColumn(); moveDown(); acted = true; }
+
+            if(acted) {
+                resetTimerForCurrentLevel(); // Time restarts on every move
+                setTimeout(refillGrid, 100);
+            }
+        }
+        document.addEventListener('keyup', control);
+
+
+        // NAYA CODE: Swipe Line, Custom L-Shape aur Free Line Merge Logic
+        let selectedPath = [];
+        let isSwiping = false;
+        let currentValue = null;
+
+        // Cell ka index find karne ke liye helper
+        function getCellIndexFromPoint(x, y) {
+            const rect = gridDisplay.getBoundingClientRect();
+            if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return null;
+            
+            const cellWidth = rect.width / size;
+            const cellHeight = rect.height / size;
+            
+            const col = Math.floor((x - rect.left) / cellWidth);
+            const row = Math.floor((y - rect.top) / cellHeight);
+            
+            if (col >= 0 && col < size && row >= 0 && row < size) {
+                return row * size + col;
+            }
+            return null;
+        }
+
+        // SVG Path draw karne ke liye
+        function updateSwipeLine() {
+            if (selectedPath.length < 1) {
+                drawingLine.style.opacity = '0';
+                return;
+            }
+            
+            drawingLine.style.opacity = '1';
+            const rect = gridDisplay.getBoundingClientRect();
+            let d = '';
+
+            selectedPath.forEach((idx, i) => {
+                const cellRect = squares[idx].getBoundingClientRect();
+                const centerX = cellRect.left - rect.left + cellRect.width / 2;
+                const centerY = cellRect.top - rect.top + cellRect.height / 2;
+                
+                if (i === 0) d += `M ${centerX} ${centerY}`;
+                else d += ` L ${centerX} ${centerY}`;
+            });
+
+            drawingLine.setAttribute('d', d);
+        }
+
+        function handleSwipeMove(clientX, clientY) {
+            if (!isSwiping || isGameOver) return;
+
+            const currentIdx = getCellIndexFromPoint(clientX, clientY);
+            if (currentIdx !== null) {
+                const val = squares[currentIdx].innerHTML;
+                if (val !== '' && val !== '0') {
+                    // Agar line shuru ho rahi hai
+                    if (selectedPath.length === 0) {
+                        currentValue = val;
+                        selectedPath.push(currentIdx);
+                        squares[currentIdx].classList.add('selected-cell');
+                        playSwipeSoundLoud(); // NAYA CODE: Swipe Sound
+                    } 
+                    // NAYA CODE: Line ko wapas le jane wala (Undo) logic
+                    else if (selectedPath.length >= 2 && currentIdx === selectedPath[selectedPath.length - 2]) {
+                        let removedIdx = selectedPath.pop();
+                        squares[removedIdx].classList.remove('selected-cell');
+                        updateSwipeLine();
+                        playSwipeSoundLoud(); // NAYA CODE: Undo Swipe Sound
+                    }
+                    // Agar agla box bhi same number ka hai aur repeat nahi ho raha
+                    else if (val === currentValue && !selectedPath.includes(currentIdx)) {
+                        const lastIdx = selectedPath[selectedPath.length - 1];
+                        const lastRow = Math.floor(lastIdx / size);
+                        const lastCol = lastIdx % size;
+                        const currRow = Math.floor(currentIdx / size);
+                        const currCol = currentIdx % size;
+
+                        // Sirf pass wale boxes me line ja sakegi (Horizontal, Vertical, Diagonal)
+                        if (Math.abs(lastRow - currRow) <= 1 && Math.abs(lastCol - currCol) <= 1) {
+                            selectedPath.push(currentIdx);
+                            squares[currentIdx].classList.add('selected-cell');
+                            playSwipeSoundLoud(); // NAYA CODE: Next box move sound
+                        }
+                    }
+                    updateSwipeLine();
+                }
+            }
+        }
+
+        function endSwipe() {
+            if (!isSwiping || isGameOver) return;
+            isSwiping = false;
+            drawingLine.style.opacity = '0';
+            drawingLine.setAttribute('d', '');
+
+            // Selected effect clean karna
+            selectedPath.forEach(idx => squares[idx].classList.remove('selected-cell'));
+
+            // Agar 2 ya zyada boxes join ho rahe hain
+            if (selectedPath.length >= 2) {
+                let total = 0;
+                let lastBoxIdx = selectedPath[selectedPath.length - 1];
+                
+                // Sabhi join hue boxes ko count karna
+                selectedPath.forEach(idx => {
+                    total += parseInt(squares[idx].innerHTML);
+                    squares[idx].innerHTML = ''; // Khali karna
+                });
+
+                // Rule ke mutabiq values fill karna
+                squares[lastBoxIdx].innerHTML = total;
+                score += total;
+                scoreDisplay.innerHTML = score;
+                
+                checkLevelProgression(); // Level update check
+                triggerPopEffect(squares[lastBoxIdx]); // Box ko 3D pop aur permanent glow dena
+                playJoinSoundLoud(); // NAYA CODE: Join Chime Sound
+                
+                resetTimerForCurrentLevel(); // Time restarts on every move
+                
+                setTimeout(refillGrid, 150);
+            }
+            
+            selectedPath = [];
+            currentValue = null;
+            updateStyles();
+        }
+
+        // Mobile Touch Events setup
+        gridDisplay.addEventListener('touchstart', function(e) {
+            isSwiping = true;
+            handleSwipeMove(e.touches[0].clientX, e.touches[0].clientY);
+        }, false);
+
+        gridDisplay.addEventListener('touchmove', function(e) {
+            handleSwipeMove(e.touches[0].clientX, e.touches[0].clientY);
+        }, false);
+
+        gridDisplay.addEventListener('touchend', endSwipe, false);
+
+        // Backup PC compatibility drag events
+        gridDisplay.addEventListener('mousedown', function(e) {
+            isSwiping = true;
+            handleSwipeMove(e.clientX, e.clientY);
+        });
+        document.addEventListener('mousemove', function(e) {
+            if(isSwiping) handleSwipeMove(e.clientX, e.clientY);
+        });
+        document.addEventListener('mouseup', endSwipe);
+
+
+        function resetGame() {
+            score = 0;
+            level = 1;
+            timeLeft = 60;
+            isGameOver = false;
+            
+            scoreDisplay.innerHTML = score;
+            levelDisplay.innerHTML = level;
+            timerDisplay.innerHTML = timeLeft;
+            gameOverOverlay.style.display = 'none';
+            levelUpPopup.style.display = 'none'; // Ensure popup is hidden
+            
+            createBoard();
+            startTimerSystem(); // Timer reset
+        }
+
+        createBoard();
+        // startTimerSystem(); ko default call se hata diya kyunki auth process flow run hoga pehle
+    </script>
+</body>
+</html>
