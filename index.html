@@ -511,7 +511,7 @@
         }
         .hs-box {
             background: #ffffff;
-            width: 90px;
+            width: 100px; /* Thoda wide kiya taki naam fit aa sake */
             padding: 12px 5px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
@@ -529,6 +529,20 @@
             font-size: 20px;
             font-weight: bold;
             color: #2c3e50;
+        }
+        /* Naye score boxes me user details add karne ke liye styles */
+        .hs-box .user-text {
+            font-size: 11px;
+            color: #34495e;
+            font-weight: bold;
+            margin-top: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .hs-box .mobile-text {
+            font-size: 10px;
+            color: #7f8c8d;
         }
         /* Top 1, 2, 3 ke special color gradients */
         .hs-first { border-color: #FFD700; background: linear-gradient(to bottom, #ffffff, #fffdf0); }
@@ -781,14 +795,20 @@
                 <div class="hs-box hs-first">
                     <div class="rank-text">🥇 First</div>
                     <div class="score-text" id="high-score-1">0</div>
+                    <div class="user-text" id="user-1">-</div>
+                    <div class="mobile-text" id="mob-1">****</div>
                 </div>
                 <div class="hs-box hs-second">
                     <div class="rank-text">🥈 Second</div>
                     <div class="score-text" id="high-score-2">0</div>
+                    <div class="user-text" id="user-2">-</div>
+                    <div class="mobile-text" id="mob-2">****</div>
                 </div>
                 <div class="hs-box hs-third">
                     <div class="rank-text">🥉 Third</div>
                     <div class="score-text" id="high-score-3">0</div>
+                    <div class="user-text" id="user-3">-</div>
+                    <div class="mobile-text" id="mob-3">****</div>
                 </div>
             </div>
         </div>
@@ -883,8 +903,12 @@
         // NAYA CODE: Logged-in User save rakhne ke liye
         let currentUserMobile = null;
 
-        // NAYA CODE: High Scores ko Local Storage se lane ke liye
-        let normalHighScores = [0, 0, 0];
+        // NAYA CODE: High Scores ko Local Storage se lane ke liye (Scores ke sath details store karne ke liye naya structure)
+        let normalHighScores = [
+            {score: 0, name: "-", mobile: "****"},
+            {score: 0, name: "-", mobile: "****"},
+            {score: 0, name: "-", mobile: "****"}
+        ];
 
         function togglePassVisibility(id) {
             const input = document.getElementById(id);
@@ -955,28 +979,44 @@
         function fetchGlobalScores() {
             database.ref('globalHighScores').on('value', (snapshot) => {
                 const data = snapshot.val();
-                if (data) {
+                if (data && Array.isArray(data)) {
                     normalHighScores = data;
                 } else {
-                    normalHighScores = [0, 0, 0];
+                    normalHighScores = [
+                        {score: 0, name: "-", mobile: "****"},
+                        {score: 0, name: "-", mobile: "****"},
+                        {score: 0, name: "-", mobile: "****"}
+                    ];
                 }
                 updateHighScoreDisplay();
             });
         }
 
-        // NAYA CODE: High Scores ko Screen par load karne ke liye
+        // NAYA CODE: High Scores ko Screen par load karne ke liye (Ab names aur mobile numbers bhi fill honge)
         function updateHighScoreDisplay() {
-            document.getElementById('high-score-1').innerHTML = normalHighScores[0];
-            document.getElementById('high-score-2').innerHTML = normalHighScores[1];
-            document.getElementById('high-score-3').innerHTML = normalHighScores[2];
+            for (let i = 0; i < 3; i++) {
+                const record = normalHighScores[i] || {score: 0, name: "-", mobile: "****"};
+                document.getElementById(`high-score-${i+1}`).innerHTML = record.score;
+                document.getElementById(`user-${i+1}`).innerHTML = record.name;
+                document.getElementById(`mob-${i+1}`).innerHTML = record.mobile;
+            }
         }
 
-        // NAYA CODE: Game over hone par score Firebase me save karne ke liye
+        // NAYA CODE: Game over hone par score Firebase me save karne ke liye (Name aur last 4 mobile digits save honge)
         function checkAndSaveHighScore() {
             if (gameMode === 'normal') {
+                const activeUser = usersDB.find(u => u.mobile === currentUserMobile);
+                const userName = activeUser ? activeUser.name : "Unknown";
+                const lastFourDigits = currentUserMobile ? currentUserMobile.slice(-4) : "****";
+
                 // Score ko array me add karke sort karo
-                normalHighScores.push(score);
-                normalHighScores.sort((a, b) => b - a); // Bade se chhota sort
+                normalHighScores.push({
+                    score: score,
+                    name: userName,
+                    mobile: "..." + lastFourDigits
+                });
+                
+                normalHighScores.sort((a, b) => b.score - a.score); // Bade se chhota sort
                 normalHighScores = normalHighScores.slice(0, 3); // Sirf top 3 rakho
                 
                 // Firebase me save kar rahe hain taki sabhi user dekhein
