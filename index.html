@@ -1037,7 +1037,7 @@
         // ---------------------------
         // NAYA CODE: AUTH & MODES LOGIC
         // ---------------------------
-        let usersDB = JSON.parse(localStorage.getItem('mathGameUsers')) || [];
+        // CHANGE: Ab local storage arrays ki bajaye users data firebase se read/write hoga.
         let gameMode = 'pro'; // Default pro play
         
         // NAYA CODE: Logged-in User save rakhne ke liye
@@ -1069,6 +1069,7 @@
             }
         }
 
+        // CHANGE: Handle Signup ab Firebase me store karega
         function handleSignup() {
             const name = document.getElementById('signup-name').value.trim();
             const mobile = document.getElementById('signup-mobile').value.trim();
@@ -1079,19 +1080,28 @@
                 return;
             }
 
-            const existingUser = usersDB.find(u => u.mobile === mobile);
-            if (existingUser) {
-                alert("Yeh mobile number pehle se registered hai!");
-                return;
-            }
-
-            // NAYA CODE: Profile pic add kar di users profile list ke saath
-            usersDB.push({ name, mobile, pass, profilePic: "https://cdn-icons-png.flaticon.com/512/149/149071.png" });
-            localStorage.setItem('mathGameUsers', JSON.stringify(usersDB));
-            alert("Signup safal raha! Ab login karein.");
-            switchAuth('login');
+            // Firebase se check karega ki pehle se registered hai ya nahi
+            database.ref('users/' + mobile).once('value').then((snapshot) => {
+                if (snapshot.exists()) {
+                    alert("Yeh mobile number pehle se registered hai!");
+                } else {
+                    // Firebase me direct push profile pic ke sath
+                    database.ref('users/' + mobile).set({
+                        name: name,
+                        mobile: mobile,
+                        pass: pass,
+                        profilePic: "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                    }).then(() => {
+                        alert("Signup safal raha! Ab login karein.");
+                        switchAuth('login');
+                    }).catch((error) => {
+                        alert("Data save karne me problem aayi: " + error.message);
+                    });
+                }
+            });
         }
 
+        // CHANGE: Handle Login ab Firebase se match karega
         function handleLogin() {
             const mobile = document.getElementById('login-mobile').value.trim();
             const pass = document.getElementById('login-pass').value.trim();
@@ -1101,21 +1111,27 @@
                 return;
             }
 
-            const user = usersDB.find(u => u.mobile === mobile && u.pass === pass);
-            if (user) {
-                currentUserMobile = mobile; // Current active session
-                
-                // NAYA CODE: Auto-login ke liye user ka mobile local storage me save kar rahe hain
-                localStorage.setItem('currentUserMobile', mobile);
+            database.ref('users/' + mobile).once('value').then((snapshot) => {
+                if (snapshot.exists()) {
+                    const user = snapshot.val();
+                    if (user.pass === pass) {
+                        currentUserMobile = mobile; // Current active session
+                        
+                        // NAYA CODE: Auto-login ke liye user ka mobile local storage me save kar rahe hain
+                        localStorage.setItem('currentUserMobile', mobile);
 
-                document.getElementById('auth-overlay').style.display = 'none';
-                document.getElementById('mode-overlay').style.display = 'flex';
-                
-                // NAYA CODE: Login hote hi Firebase se top score lane ke liye call
-                fetchGlobalScores(); 
-            } else {
-                alert("Galat Mobile Number ya Password!");
-            }
+                        document.getElementById('auth-overlay').style.display = 'none';
+                        document.getElementById('mode-overlay').style.display = 'flex';
+                        
+                        // NAYA CODE: Login hote hi Firebase se top score lane ke liye call
+                        fetchGlobalScores(); 
+                    } else {
+                        alert("Galat Password!");
+                    }
+                } else {
+                    alert("Yeh mobile number registered nahi hai!");
+                }
+            });
         }
 
         // NAYA CODE: Firebase se score lake HTML me fill karne ka function
@@ -1151,25 +1167,29 @@
 
         // NAYA CODE: Game over hone par score Firebase me save karne ke liye (Name aur last 4 mobile digits save honge)
         function checkAndSaveHighScore() {
-            // Hum isme se condition isliye hata rahe hain taki Pro mode me bhi game over logic safely handle ho sake
-            const activeUser = usersDB.find(u => u.mobile === currentUserMobile);
-            const userName = activeUser ? activeUser.name : "Unknown";
-            const lastFourDigits = currentUserMobile ? currentUserMobile.slice(-4) : "****";
-            const profilePic = activeUser ? activeUser.profilePic : "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+            // CHANGE: Ab user detail fetch LocalStorage ke bajaye Firebase se hongi game over par
+            if (!currentUserMobile) return;
 
-            // Score ko array me add karke sort karo
-            normalHighScores.push({
-                score: score,
-                name: userName,
-                mobile: "..." + lastFourDigits,
-                profilePic: profilePic
+            database.ref('users/' + currentUserMobile).once('value').then((snapshot) => {
+                const activeUser = snapshot.val() || {};
+                const userName = activeUser.name || "Unknown";
+                const lastFourDigits = currentUserMobile ? currentUserMobile.slice(-4) : "****";
+                const profilePic = activeUser.profilePic || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
+                // Score ko array me add karke sort karo
+                normalHighScores.push({
+                    score: score,
+                    name: userName,
+                    mobile: "..." + lastFourDigits,
+                    profilePic: profilePic
+                });
+                
+                normalHighScores.sort((a, b) => b.score - a.score); // Bade se chhota sort
+                normalHighScores = normalHighScores.slice(0, 3); // Sirf top 3 rakho
+                
+                // Firebase me save kar rahe hain taki sabhi user dekhein
+                database.ref('globalHighScores').set(normalHighScores);
             });
-            
-            normalHighScores.sort((a, b) => b.score - a.score); // Bade se chhota sort
-            normalHighScores = normalHighScores.slice(0, 3); // Sirf top 3 rakho
-            
-            // Firebase me save kar rahe hain taki sabhi user dekhein
-            database.ref('globalHighScores').set(normalHighScores);
         }
 
         function startGameMode(mode) {
@@ -1207,18 +1227,23 @@
             else sidebar.classList.remove('active');
         }
 
+        // CHANGE: Profile modal open krne par data ab Firebase se aayega
         function openProfileModal() {
             toggleSidebar(false); // Menu close karein
             
-            const user = usersDB.find(u => u.mobile === currentUserMobile);
-            if (user) {
-                document.getElementById('prof-name').value = user.name;
-                document.getElementById('prof-mobile').value = user.mobile;
-                document.getElementById('prof-pass').value = user.pass;
-                document.getElementById('profile-img').src = user.profilePic || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
-                
-                document.getElementById('profile-modal').style.display = 'flex';
-            }
+            if (!currentUserMobile) return;
+
+            database.ref('users/' + currentUserMobile).once('value').then((snapshot) => {
+                if (snapshot.exists()) {
+                    const user = snapshot.val();
+                    document.getElementById('prof-name').value = user.name;
+                    document.getElementById('prof-mobile').value = user.mobile;
+                    document.getElementById('prof-pass').value = user.pass;
+                    document.getElementById('profile-img').src = user.profilePic || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+                    
+                    document.getElementById('profile-modal').style.display = 'flex';
+                }
+            });
         }
 
         function closeProfileModal() {
@@ -1236,9 +1261,8 @@
             }
         }
 
-        // Profile details save krne ke liye logic
+        // CHANGE: Profile details save karne ke liye ab Firebase use hoga.
         function saveProfileChanges() {
-            const userIdx = usersDB.findIndex(u => u.mobile === currentUserMobile);
             const newName = document.getElementById('prof-name').value.trim();
             const newMobile = document.getElementById('prof-mobile').value.trim();
             const newPass = document.getElementById('prof-pass').value.trim();
@@ -1249,25 +1273,23 @@
                 return;
             }
 
-            // Mobile checking duplicate case
-            const duplicateMobile = usersDB.find((u, idx) => u.mobile === newMobile && idx !== userIdx);
-            if (duplicateMobile) {
-                alert("Yeh mobile number pehle se koi doosra user use kar raha hai!");
-                return;
+            // Kyonki mobile key node hai isliye mobile change hone pr naya record create hota hai to remove and replace
+            if (newMobile !== currentUserMobile) {
+                 alert("Aap apna mobile number change nahi kar sakte. Name aur Password badal sakte hain.");
+                 return;
             }
 
-            // Save details in local DB
-            usersDB[userIdx].name = newName; // Allowed to change name as requested
-            usersDB[userIdx].mobile = newMobile;
-            usersDB[userIdx].pass = newPass;
-            usersDB[userIdx].profilePic = profilePicData;
-            
-            currentUserMobile = newMobile; // Session update
-            localStorage.setItem('currentUserMobile', newMobile); // Local storage update for auto-login
-            localStorage.setItem('mathGameUsers', JSON.stringify(usersDB));
-            
-            alert("Profile successfully update ho gayi!");
-            closeProfileModal();
+            // Save details in Firebase directly
+            database.ref('users/' + currentUserMobile).update({
+                name: newName,
+                pass: newPass,
+                profilePic: profilePicData
+            }).then(() => {
+                alert("Profile successfully update ho gayi!");
+                closeProfileModal();
+            }).catch((error) => {
+                alert("Profile update failed: " + error.message);
+            });
         }
 
         // ---------------------------
@@ -1310,7 +1332,7 @@
 
         function openWhatsAppHelp() {
             // Opening direct WhatsApp chat to given number
-            const whatsappUrl = "https://wa.me/910578913144";
+            const whatsappUrl = "https://wa.me/+966578913144";
             window.open(whatsappUrl, '_blank');
         }
 
@@ -2036,13 +2058,15 @@
         window.addEventListener('load', () => {
             const savedMobile = localStorage.getItem('currentUserMobile');
             if (savedMobile) {
-                const user = usersDB.find(u => u.mobile === savedMobile);
-                if (user) {
-                    currentUserMobile = savedMobile;
-                    document.getElementById('auth-overlay').style.display = 'none';
-                    document.getElementById('mode-overlay').style.display = 'flex';
-                    fetchGlobalScores();
-                }
+                // CHANGE: Ab auto login bhi firebase se verify hoga LocalStorage ki bajaye.
+                database.ref('users/' + savedMobile).once('value').then((snapshot) => {
+                    if (snapshot.exists()) {
+                        currentUserMobile = savedMobile;
+                        document.getElementById('auth-overlay').style.display = 'none';
+                        document.getElementById('mode-overlay').style.display = 'flex';
+                        fetchGlobalScores();
+                    }
+                });
             }
         });
     </script>
