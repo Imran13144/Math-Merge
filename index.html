@@ -176,16 +176,17 @@
             box-shadow: 0 3px 5px rgba(0,0,0,0.1);
             transition: transform 0.3s;
         }
+        
+        /* FIX CODE: Game over show hone ke liye isko global full overlay banaya gaya hai */
         #game-over-overlay {
             display: none;
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.85);
-            border-radius: 10px;
-            z-index: 50;
+            z-index: 5000;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -552,26 +553,20 @@
         .hs-first .score-text { color: #d4af37; }
         .hs-first .rank-text { color: #d4af37; }
 
+        /* NAYA CODE: Profile Photo CSS in Top-3 Scores */
+        .hs-profile-pic {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            margin: 0 auto 5px auto;
+            border: 2px solid #00e5ff;
+            display: block;
+            object-fit: cover;
+        }
+
         /* --------------------------- */
         /* NAYA CODE: SIDE MENU & PROFILE POPUP */
         /* --------------------------- */
-        
-        /* Hamburger Button */
-        .menu-toggle-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #b38f00;
-            color: black;
-            border: 1px solid #ffcc00;
-            padding: 10px 15px;
-            font-size: 20px;
-            font-weight: bold;
-            border-radius: 5px;
-            cursor: pointer;
-            z-index: 1001;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
         
         /* Sliding Sidebar Menu */
         .side-menu {
@@ -692,13 +687,151 @@
             font-size: 20px;
             font-weight: bold;
         }
+
+        /* --------------------------- */
+        /* NAYA CODE: LEFT SIDEBAR CSS (GIVEN IN LAST PROMPT) */
+        /* --------------------------- */
+        .left-sidebar {
+            position: fixed;
+            top: 0;
+            left: -280px; /* Hidden state */
+            width: 250px;
+            height: 100%;
+            background: #0f1c24;
+            border-right: 3px solid #b38f00;
+            z-index: 1500;
+            transition: left 0.3s ease;
+            box-shadow: 5px 0 15px rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 15px;
+            box-sizing: border-box;
+        }
+        .left-sidebar.active {
+            left: 0; /* Visible state */
+        }
+        .left-sidebar h3 {
+            color: #ffcc00;
+            text-align: center;
+            text-transform: uppercase;
+            border-bottom: 1px solid #1a3344;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .sidebar-btn {
+            background: #080f14;
+            color: #ffcc00;
+            border: 1px solid #1a3344;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .sidebar-btn:hover {
+            background: #11212b;
+            border-color: #00e5ff;
+            color: #00e5ff;
+        }
+        .sidebar-close-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: auto;
+        }
+        
+        /* Menu Trigger Button */
+        #menu-trigger-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: #0f1c24;
+            color: #ffcc00;
+            border: 2px solid #b38f00;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 850;
+            font-size: 14px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Popup Box for Long Texts like Rules & T&C */
+        .text-modal-content {
+            text-align: left;
+            color: #fff;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.5;
+            padding: 10px;
+            background: #080f14;
+            border: 1px solid #1a3344;
+            border-radius: 3px;
+        }
+        .text-modal-content h4 {
+            color: #ffcc00;
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
     </style>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
 
-    <button class="menu-toggle-btn" id="menu-toggler" onclick="toggleSidebar(true)" style="display:none;">☰ MENU</button>
+    <div class="left-sidebar" id="left-sidebar-menu">
+        <h3>Menu</h3>
+        <button class="sidebar-btn" onclick="openProfileModalFromSidebar()">👤 Profile</button>
+        <button class="sidebar-btn" onclick="handleShareLink()">🔗 Share</button>
+        <button class="sidebar-btn" onclick="openGameRules()">📜 Game Rules</button>
+        <button class="sidebar-btn" onclick="openTermConditions()">📋 Terms & Conditions</button>
+        <button class="sidebar-btn" onclick="openWhatsAppHelp()">📞 Help</button>
+        <button class="sidebar-btn" onclick="handleLogout()">🚪 Logout</button>
+        <button class="sidebar-close-btn" onclick="toggleLeftSidebar(false)">Close Menu</button>
+    </div>
+
+    <div class="modal-overlay" id="rules-modal">
+        <div class="modal-card">
+            <span class="modal-close-btn" onclick="closeModal('rules-modal')">&times;</span>
+            <h2>Game Rules</h2>
+            <div class="text-modal-content">
+                <h4>In English:</h4>
+                <p>1. Swipe the screen to move and merge similar numbers together.</p>
+                <p>2. Merging two identical numbers creates a bigger number and rewards points.</p>
+                <p>3. In Pro mode, keep track of time. Time is limited for each level!</p>
+                <p>4. Match tiles diagonally, horizontally, or vertically by drawing lines.</p>
+                
+                <h4>हिंदी में:</h4>
+                <p>1. समान नंबरों को एक साथ ले जाने और जोड़ने के लिए स्क्रीन को स्वाइप करें।</p>
+                <p>2. दो समान नंबरों को मिलाने से एक बड़ा नंबर बनता है और पॉइंट्स मिलते हैं।</p>
+                <p>3. प्रो मोड में समय का ध्यान रखें। प्रत्येक स्तर के लिए समय सीमित है!</p>
+                <p>4. लाइन खींचकर टाइल्स को तिरछा, आड़ा या सीधा मिलाया जा सकता है।</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="terms-modal">
+        <div class="modal-card">
+            <span class="modal-close-btn" onclick="closeModal('terms-modal')">&times;</span>
+            <h2>Terms & Conditions</h2>
+            <div class="text-modal-content">
+                <h4>Game Integrity:</h4>
+                <p>If any user tries to hack the game, modify files, or use illegal cheating scripts to make high scores, their account/ID will be permanently blocked without any prior notice.</p>
+                
+                <h4>गेम अखंडता:</h4>
+                <p>अगर कोई भी यूजर गेम को हैक करने, फाइल्स को मॉडिफाई करने या हाई स्कोर बनाने के लिए अवैध चीटिंग स्क्रिप्ट का इस्तेमाल करेगा, तो उसकी आईडी को बिना किसी पूर्व सूचना के हमेशा के लिए ब्लॉक कर दिया जाएगा।</p>
+            </div>
+        </div>
+    </div>
 
     <div class="side-menu" id="sidebar-menu">
         <h3>Game Panel</h3>
@@ -723,11 +856,11 @@
 
             <div class="input-group">
                 <label>User Name</label>
-                <input type="text" id="prof-name" readonly>
+                <input type="text" id="prof-name" placeholder="Apna naya naam">
             </div>
             <div class="input-group">
                 <label>Mobile Number</label>
-                <input type="tel" id="prof-mobile" placeholder="Naya Mobile Number">
+                <input type="tel" id="prof-mobile" placeholder="Naya Mobile Number" readonly>
             </div>
             <div class="input-group">
                 <label>Password</label>
@@ -785,6 +918,8 @@
     </div>
 
     <div id="mode-overlay">
+        <button id="menu-trigger-btn" onclick="toggleLeftSidebar(true)">☰ Menu</button>
+        
         <div class="mode-container">
             <h2>Select Game Mode</h2>
             <button class="mode-btn normal-btn" onclick="startGameMode('normal')">Normal Play</button>
@@ -793,18 +928,21 @@
             <div class="highscore-title">🏆 Normal Mode Top Scores 🏆</div>
             <div class="highscore-row">
                 <div class="hs-box hs-first">
+                    <img class="hs-profile-pic" id="hs-img-1" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="User">
                     <div class="rank-text">🥇 First</div>
                     <div class="score-text" id="high-score-1">0</div>
                     <div class="user-text" id="user-1">-</div>
                     <div class="mobile-text" id="mob-1">****</div>
                 </div>
                 <div class="hs-box hs-second">
+                    <img class="hs-profile-pic" id="hs-img-2" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="User">
                     <div class="rank-text">🥈 Second</div>
                     <div class="score-text" id="high-score-2">0</div>
                     <div class="user-text" id="user-2">-</div>
                     <div class="mobile-text" id="mob-2">****</div>
                 </div>
                 <div class="hs-box hs-third">
+                    <img class="hs-profile-pic" id="hs-img-3" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="User">
                     <div class="rank-text">🥉 Third</div>
                     <div class="score-text" id="high-score-3">0</div>
                     <div class="user-text" id="user-3">-</div>
@@ -812,6 +950,13 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div id="game-over-overlay">
+        <h2>GAME OVER</h2>
+        <p id="game-over-msg">Aapka samay samapt ho gaya!</p>
+        <button onclick="resetGame()" style="background-color: #2ecc71; margin-bottom: 10px;">Dobara Khele</button>
+        <button onclick="backToMenuFromGameOver()" style="background-color: #7f8c8d;">Back</button>
     </div>
 
     <div class="header">
@@ -829,12 +974,6 @@
         <svg id="swipe-canvas">
             <path id="drawing-line" d="" />
         </svg>
-        
-        <div id="game-over-overlay">
-            <h2>GAME OVER</h2>
-            <p>Aapka samay samapt ho gaya!</p>
-            <button onclick="resetGame()" style="background-color: #2ecc71;">Dobara Khele</button>
-        </div>
 
         <div id="level-up-popup">
             <h2>LEVEL UP!</h2>
@@ -857,6 +996,7 @@
         const timerDisplay = document.getElementById('timer');
         const levelDisplay = document.getElementById('level');
         const gameOverOverlay = document.getElementById('game-over-overlay');
+        const gameOverMsg = document.getElementById('game-over-msg');
         
         // NAYA CODE: Level Up ke elements
         const levelUpPopup = document.getElementById('level-up-popup');
@@ -964,9 +1104,12 @@
             const user = usersDB.find(u => u.mobile === mobile && u.pass === pass);
             if (user) {
                 currentUserMobile = mobile; // Current active session
+                
+                // NAYA CODE: Auto-login ke liye user ka mobile local storage me save kar rahe hain
+                localStorage.setItem('currentUserMobile', mobile);
+
                 document.getElementById('auth-overlay').style.display = 'none';
                 document.getElementById('mode-overlay').style.display = 'flex';
-                document.getElementById('menu-toggler').style.display = 'block'; // Show Hamburger
                 
                 // NAYA CODE: Login hote hi Firebase se top score lane ke liye call
                 fetchGlobalScores(); 
@@ -995,33 +1138,38 @@
         // NAYA CODE: High Scores ko Screen par load karne ke liye (Ab names aur mobile numbers bhi fill honge)
         function updateHighScoreDisplay() {
             for (let i = 0; i < 3; i++) {
-                const record = normalHighScores[i] || {score: 0, name: "-", mobile: "****"};
+                const record = normalHighScores[i] || {score: 0, name: "-", mobile: "****", profilePic: "https://cdn-icons-png.flaticon.com/512/149/149071.png"};
                 document.getElementById(`high-score-${i+1}`).innerHTML = record.score;
                 document.getElementById(`user-${i+1}`).innerHTML = record.name;
                 document.getElementById(`mob-${i+1}`).innerHTML = record.mobile;
+                
+                // NAYA CODE: Profile photo score list me lagane ke liye
+                const pfp = record.profilePic || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+                document.getElementById(`hs-img-${i+1}`).src = pfp;
             }
         }
 
         // NAYA CODE: Game over hone par score Firebase me save karne ke liye (Name aur last 4 mobile digits save honge)
         function checkAndSaveHighScore() {
-            if (gameMode === 'normal') {
-                const activeUser = usersDB.find(u => u.mobile === currentUserMobile);
-                const userName = activeUser ? activeUser.name : "Unknown";
-                const lastFourDigits = currentUserMobile ? currentUserMobile.slice(-4) : "****";
+            // Hum isme se condition isliye hata rahe hain taki Pro mode me bhi game over logic safely handle ho sake
+            const activeUser = usersDB.find(u => u.mobile === currentUserMobile);
+            const userName = activeUser ? activeUser.name : "Unknown";
+            const lastFourDigits = currentUserMobile ? currentUserMobile.slice(-4) : "****";
+            const profilePic = activeUser ? activeUser.profilePic : "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
-                // Score ko array me add karke sort karo
-                normalHighScores.push({
-                    score: score,
-                    name: userName,
-                    mobile: "..." + lastFourDigits
-                });
-                
-                normalHighScores.sort((a, b) => b.score - a.score); // Bade se chhota sort
-                normalHighScores = normalHighScores.slice(0, 3); // Sirf top 3 rakho
-                
-                // Firebase me save kar rahe hain taki sabhi user dekhein
-                database.ref('globalHighScores').set(normalHighScores);
-            }
+            // Score ko array me add karke sort karo
+            normalHighScores.push({
+                score: score,
+                name: userName,
+                mobile: "..." + lastFourDigits,
+                profilePic: profilePic
+            });
+            
+            normalHighScores.sort((a, b) => b.score - a.score); // Bade se chhota sort
+            normalHighScores = normalHighScores.slice(0, 3); // Sirf top 3 rakho
+            
+            // Firebase me save kar rahe hain taki sabhi user dekhein
+            database.ref('globalHighScores').set(normalHighScores);
         }
 
         function startGameMode(mode) {
@@ -1041,6 +1189,12 @@
         function backToMenu() {
             clearInterval(timerId);
             checkAndSaveHighScore(); // Agar game beech me leave kiya hai to bhi score save ho
+            document.getElementById('mode-overlay').style.display = 'flex';
+        }
+
+        // NAYA CODE: Game over se board (Menu mode) par jaane ke liye
+        function backToMenuFromGameOver() {
+            gameOverOverlay.style.display = 'none';
             document.getElementById('mode-overlay').style.display = 'flex';
         }
         
@@ -1085,12 +1239,13 @@
         // Profile details save krne ke liye logic
         function saveProfileChanges() {
             const userIdx = usersDB.findIndex(u => u.mobile === currentUserMobile);
+            const newName = document.getElementById('prof-name').value.trim();
             const newMobile = document.getElementById('prof-mobile').value.trim();
             const newPass = document.getElementById('prof-pass').value.trim();
             const profilePicData = document.getElementById('profile-img').src;
 
-            if (!newMobile || !newPass) {
-                alert("Mobile number aur password khali nahi ho sakte!");
+            if (!newName || !newMobile || !newPass) {
+                alert("Naam, Mobile number aur password khali nahi ho sakte!");
                 return;
             }
 
@@ -1102,15 +1257,77 @@
             }
 
             // Save details in local DB
+            usersDB[userIdx].name = newName; // Allowed to change name as requested
             usersDB[userIdx].mobile = newMobile;
             usersDB[userIdx].pass = newPass;
             usersDB[userIdx].profilePic = profilePicData;
             
             currentUserMobile = newMobile; // Session update
+            localStorage.setItem('currentUserMobile', newMobile); // Local storage update for auto-login
             localStorage.setItem('mathGameUsers', JSON.stringify(usersDB));
             
             alert("Profile successfully update ho gayi!");
             closeProfileModal();
+        }
+
+        // ---------------------------
+        // NAYA CODE: NEW LEFT SIDEBAR & ITS ACTIONS (AS PER LAST PROMPT)
+        // ---------------------------
+        function toggleLeftSidebar(show) {
+            const sidebar = document.getElementById('left-sidebar-menu');
+            if (show) sidebar.classList.add('active');
+            else sidebar.classList.remove('active');
+        }
+
+        function openProfileModalFromSidebar() {
+            toggleLeftSidebar(false); // Close sidebar
+            openProfileModal(); // Use already created profile modal
+        }
+
+        function handleShareLink() {
+            const link = "https://imran13144.github.io/Tic-Tac-Toe-Dawnload/";
+            
+            // Modern copy to clipboard approach
+            navigator.clipboard.writeText(link).then(() => {
+                alert('Link copied to clipboard! Aap dosto ko share karein.\n\n' + link);
+            }).catch(err => {
+                // Fallback approach if permission is denied
+                alert('Yeh link copy karke share karein:\n' + link);
+            });
+        }
+
+        function openGameRules() {
+            document.getElementById('rules-modal').style.display = 'flex';
+        }
+
+        function openTermConditions() {
+            document.getElementById('terms-modal').style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function openWhatsAppHelp() {
+            // Opening direct WhatsApp chat to given number
+            const whatsappUrl = "https://wa.me/910578913144";
+            window.open(whatsappUrl, '_blank');
+        }
+
+        function handleLogout() {
+            const answer = confirm("Kya aap sach me log out karna chahte hain?");
+            if (answer) {
+                // If Yes
+                localStorage.removeItem('currentUserMobile'); // Clear auto login
+                currentUserMobile = null;
+                toggleLeftSidebar(false);
+                document.getElementById('mode-overlay').style.display = 'none';
+                document.getElementById('auth-overlay').style.display = 'flex';
+                switchAuth('login');
+            } else {
+                // If No
+                toggleLeftSidebar(false);
+            }
         }
         // ---------------------------
 
@@ -1294,7 +1511,7 @@
                     timerDisplay.innerHTML = timeLeft;
                     
                     if (timeLeft <= 0) {
-                        triggerGameOver();
+                        triggerGameOver("timeout");
                     }
                 }
             }, 1000);
@@ -1393,11 +1610,18 @@
             }
         }
 
-        function triggerGameOver() {
+        function triggerGameOver(reason) {
             isGameOver = true;
             clearInterval(timerId);
             checkAndSaveHighScore(); // Game over hone par score check aur save karo
-            gameOverOverlay.style.display = 'flex';
+            
+            if (reason === "timeout") {
+                gameOverMsg.innerHTML = "Aapka samay samapt ho gaya!";
+            } else if (reason === "nomoves") {
+                gameOverMsg.innerHTML = "Koi move baki nahi hai!";
+            }
+            
+            gameOverOverlay.style.display = 'flex'; // Overlay visible
         }
 
         // Swipe Left
@@ -1579,7 +1803,13 @@
 
             if(acted) {
                 resetTimerForCurrentLevel(); // Time restarts on every move
-                setTimeout(refillGrid, 100);
+                setTimeout(() => {
+                    refillGrid();
+                    // Normal mode me moves check karna
+                    if (gameMode === 'normal') {
+                        checkAvailableMoves();
+                    }
+                }, 100);
             }
         }
         document.addEventListener('keyup', control);
@@ -1702,12 +1932,62 @@
                 
                 resetTimerForCurrentLevel(); // Time restarts on every move
                 
-                setTimeout(refillGrid, 150);
+                setTimeout(() => {
+                    refillGrid();
+                    // Normal mode me moves check karna
+                    if (gameMode === 'normal') {
+                        checkAvailableMoves();
+                    }
+                }, 150);
             }
             
             selectedPath = [];
             currentValue = null;
             updateStyles();
+        }
+
+        // NAYA CODE: Check if moves are available (For Normal Mode Game Over)
+        function checkAvailableMoves() {
+            // Pehle check karein ki koi cell empty to nahi hai (Agar empty hai to game over nahi ho sakta)
+            for (let i = 0; i < squares.length; i++) {
+                if (squares[i].innerHTML === '' || squares[i].innerHTML === '0') {
+                    return; 
+                }
+            }
+
+            // Sabhi filled cells me combinations check karna
+            for (let i = 0; i < squares.length; i++) {
+                const val = squares[i].innerHTML;
+                const row = Math.floor(i / size);
+                const col = i % size;
+
+                // 8 directions (Left, Right, Up, Down, aur 4 Corners/Crosses)
+                const directions = [
+                    { r: 0, c: 1 },   // Right
+                    { r: 1, c: 0 },   // Down
+                    { r: 1, c: 1 },   // Cross Down-Right
+                    { r: 1, c: -1 },  // Cross Down-Left
+                    { r: -1, c: 0 },  // Up
+                    { r: 0, c: -1 },  // Left
+                    { r: -1, c: -1 }, // Cross Up-Left
+                    { r: -1, c: 1 }   // Cross Up-Right
+                ];
+
+                for (let dir of directions) {
+                    const newRow = row + dir.r;
+                    const newCol = col + dir.c;
+
+                    if (newRow >= 0 && newRow < size && newCol >= 0 && newCol < size) {
+                        const targetIdx = newRow * size + newCol;
+                        if (squares[targetIdx].innerHTML === val) {
+                            return; // Ek move mil gaya, abhi game over nahi hai
+                        }
+                    }
+                }
+            }
+
+            // Agar kahin pe bhi matching pair nahi mila to game over
+            triggerGameOver("nomoves");
         }
 
         // Mobile Touch Events setup
@@ -1751,6 +2031,20 @@
 
         createBoard();
         // startTimerSystem(); ko default call se hata diya kyunki auth process flow run hoga pehle
+        
+        // NAYA CODE: Auto login logic check on page load
+        window.addEventListener('load', () => {
+            const savedMobile = localStorage.getItem('currentUserMobile');
+            if (savedMobile) {
+                const user = usersDB.find(u => u.mobile === savedMobile);
+                if (user) {
+                    currentUserMobile = savedMobile;
+                    document.getElementById('auth-overlay').style.display = 'none';
+                    document.getElementById('mode-overlay').style.display = 'flex';
+                    fetchGlobalScores();
+                }
+            }
+        });
     </script>
 </body>
 </html>
