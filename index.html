@@ -782,6 +782,26 @@
             margin-top: 10px;
             margin-bottom: 5px;
         }
+
+        /* --------------------------- */
+        /* NAYA CODE: DASHBOARD SECTION FOR MATH MERGE */
+        /* --------------------------- */
+        .dashboard-row {
+            display: flex;
+            justify-content: space-between;
+            background: #080f14;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #1a3344;
+            margin-bottom: 10px;
+        }
+        .dashboard-row span:first-child {
+            color: #ffcc00;
+            font-weight: bold;
+        }
+        .dashboard-row span:last-child {
+            color: #00e5ff;
+        }
     </style>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -790,6 +810,7 @@
 
     <div class="left-sidebar" id="left-sidebar-menu">
         <h3>Menu</h3>
+        <button class="sidebar-btn" onclick="openMathMergeDashboard()">📊 Math Merge Data</button>
         <button class="sidebar-btn" onclick="openProfileModalFromSidebar()">👤 Profile</button>
         <button class="sidebar-btn" onclick="handleShareLink()">🔗 Share</button>
         <button class="sidebar-btn" onclick="openGameRules()">📜 Game Rules</button>
@@ -797,6 +818,35 @@
         <button class="sidebar-btn" onclick="openWhatsAppHelp()">📞 Help</button>
         <button class="sidebar-btn" onclick="handleLogout()">🚪 Logout</button>
         <button class="sidebar-close-btn" onclick="toggleLeftSidebar(false)">Close Menu</button>
+    </div>
+
+    <div class="modal-overlay" id="dashboard-modal">
+        <div class="modal-card">
+            <span class="modal-close-btn" onclick="closeModal('dashboard-modal')">&times;</span>
+            <h2>Math Merge Data</h2>
+            <div style="text-align: left;">
+                <div class="dashboard-row">
+                    <span>User Name:</span>
+                    <span id="dash-username">-</span>
+                </div>
+                <div class="dashboard-row">
+                    <span>Mobile:</span>
+                    <span id="dash-mobile">****</span>
+                </div>
+                <div class="dashboard-row">
+                    <span>Current Score:</span>
+                    <span id="dash-score">0</span>
+                </div>
+                <div class="dashboard-row">
+                    <span>Current Level:</span>
+                    <span id="dash-level">1</span>
+                </div>
+                <div class="dashboard-row">
+                    <span>Game Mode:</span>
+                    <span id="dash-mode">-</span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="modal-overlay" id="rules-modal">
@@ -811,7 +861,7 @@
                 <p>4. Match tiles diagonally, horizontally, or vertically by drawing lines.</p>
                 
                 <h4>हिंदी में:</h4>
-                <p>1. समान नंबरों को एक साथ ले जाने और जोड़ने के लिए स्क्रीन को स्वाइप करें।</p>
+                <p>1. समान नंबरों को एक साथ ले जाने aur जोड़ने के लिए स्क्रीन को स्वाइप करें।</p>
                 <p>2. दो समान नंबरों को मिलाने से एक बड़ा नंबर बनता है और पॉइंट्स मिलते हैं।</p>
                 <p>3. प्रो मोड में समय का ध्यान रखें। प्रत्येक स्तर के लिए समय सीमित है!</p>
                 <p>4. लाइन खींचकर टाइल्स को तिरछा, आड़ा या सीधा मिलाया जा सकता है।</p>
@@ -1018,16 +1068,17 @@
         let audioCtx = null;
 
         // ---------------------------
-        // NAYA CODE: FIREBASE INITIALIZE
+        // NAYA CODE: FIREBASE INITIALIZE (UPDATED AS REQUESTED)
         // ---------------------------
         const firebaseConfig = {
-            apiKey: "AIzaSyDqoWrKntd-qMHTE8u7yd4-2M_C0SbjYHc",
-            authDomain: "gameadda-48c68.firebaseapp.com",
-            databaseURL: "https://gameadda-48c68-default-rtdb.firebaseio.com",
-            projectId: "gameadda-48c68",
-            storageBucket: "gameadda-48c68.appspot.com",
-            messagingSenderId: "36531557022",
-            appId: "1:36531557022:web:651ef8a1e67fa4a85fa0d3"
+            apiKey: "AIzaSyAiAswwCTT03ENPO-oLr3dyac_zuwnUsMY",
+            authDomain: "math-merge-fa42c.firebaseapp.com",
+            projectId: "math-merge-fa42c",
+            storageBucket: "math-merge-fa42c.firebasestorage.app",
+            messagingSenderId: "196288075601",
+            appId: "1:196288075601:web:4b53edcaf71ae171986570",
+            measurementId: "G-H9N3PZ0HCE",
+            databaseURL: "https://math-merge-fa42c-default-rtdb.firebaseio.com/" 
         };
         
         // Initialize Firebase
@@ -1085,12 +1136,17 @@
                 if (snapshot.exists()) {
                     alert("Yeh mobile number pehle se registered hai!");
                 } else {
-                    // Firebase me direct push profile pic ke sath
+                    // NAYA BADLAV: Registration Date and Time create karne ka logic
+                    const now = new Date();
+                    const registrationDate = now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+
+                    // Firebase me direct push profile pic aur registration date ke sath
                     database.ref('users/' + mobile).set({
                         name: name,
                         mobile: mobile,
                         pass: pass,
-                        profilePic: "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                        profilePic: "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+                        registrationDate: registrationDate // Yeh admin me date & time dikhaega
                     }).then(() => {
                         alert("Signup safal raha! Ab login karein.");
                         switchAuth('login');
@@ -1350,6 +1406,33 @@
                 // If No
                 toggleLeftSidebar(false);
             }
+        }
+        
+        // ---------------------------
+        // NAYA CODE: DASHBOARD FETCHING FOR MATH MERGE DATA
+        // ---------------------------
+        function openMathMergeDashboard() {
+            toggleLeftSidebar(false); // Sidebar close
+            
+            if (!currentUserMobile) {
+                alert("Pehle login karein!");
+                return;
+            }
+
+            // Fill real-time running data
+            document.getElementById('dash-score').innerHTML = score;
+            document.getElementById('dash-level').innerHTML = level;
+            document.getElementById('dash-mode').innerHTML = gameMode.toUpperCase();
+
+            // Fetch user profile from Firebase
+            database.ref('users/' + currentUserMobile).once('value').then((snapshot) => {
+                if (snapshot.exists()) {
+                    const user = snapshot.val();
+                    document.getElementById('dash-username').innerHTML = user.name;
+                    document.getElementById('dash-mobile').innerHTML = user.mobile;
+                }
+                document.getElementById('dashboard-modal').style.display = 'flex';
+            });
         }
         // ---------------------------
 
@@ -1656,7 +1739,10 @@
                         row.push(parseInt(squares[i+j].innerHTML) || 0);
                     }
 
-                    let originalRow = [...row];
+                    let originalRow = [];
+                    for (let k = 0; k < row.length; k++) {
+                        originalRow.push(row[k]);
+                    }
                     let filteredRow = row.filter(num => num);
                     let missing = size - filteredRow.length;
                     let zeros = Array(missing).fill('');
@@ -1682,7 +1768,10 @@
                         row.push(parseInt(squares[i+j].innerHTML) || 0);
                     }
 
-                    let originalRow = [...row];
+                    let originalRow = [];
+                    for (let k = 0; k < row.length; k++) {
+                        originalRow.push(row[k]);
+                    }
                     let filteredRow = row.filter(num => num);
                     let missing = size - filteredRow.length;
                     let zeros = Array(missing).fill('');
@@ -1707,7 +1796,10 @@
                     column.push(parseInt(squares[i + (j * size)].innerHTML) || 0);
                 }
 
-                let originalCol = [...column];
+                let originalCol = [];
+                for (let k = 0; k < column.length; k++) {
+                    originalCol.push(column[k]);
+                }
                 let filteredCol = column.filter(num => num);
                 let missing = size - filteredCol.length;
                 let zeros = Array(missing).fill('');
@@ -1731,7 +1823,10 @@
                     column.push(parseInt(squares[i + (j * size)].innerHTML) || 0);
                 }
 
-                let originalCol = [...column];
+                let originalCol = [];
+                for (let k = 0; k < column.length; k++) {
+                    originalCol.push(column[k]);
+                }
                 let filteredCol = column.filter(num => num);
                 let missing = size - filteredCol.length;
                 let zeros = Array(missing).fill('');
