@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Merge Math Game</title>
     <style>
         body {
@@ -21,10 +21,12 @@
             user-select: none;
             /* 3D Depth ke liye halka sa inner shadow */
             box-shadow: inset 0 0 100px rgba(0,0,0,0.2);
-
-            /* APK OPTIMIZATION: Pull-to-refresh disable karne ke liye */
+            /* NAYA ADDITION: Pull-to-refresh disable karne ke liye aur APK optimization */
             overscroll-behavior-y: contain;
-            touch-action: none;
+            position: fixed;
+            width: 100%;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
         }
 
         /* Background Animation Logic */
@@ -914,16 +916,9 @@
     </div>
 
     <script>
-        // APK OPTIMIZATION: Pull-to-Refresh ko JavaScript level par block karne ke liye
-        document.addEventListener('touchstart', function(e) {
-            if (e.touches.length > 1) return; 
-        }, { passive: false });
-
-        document.addEventListener('touchmove', function(e) {
-            // Screen refresh ko rokne ke liye
-            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-                e.preventDefault();
-            }
+        /* NAYA ADDITION: Pull-to-refresh aur default swipes ko prevent karne ke liye script */
+        document.addEventListener('touchmove', function (e) {
+            if (e.scale !== 1) { e.preventDefault(); }
         }, { passive: false });
 
         const gridDisplay = document.getElementById('grid');
