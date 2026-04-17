@@ -21,6 +21,10 @@
             user-select: none;
             /* 3D Depth ke liye halka sa inner shadow */
             box-shadow: inset 0 0 100px rgba(0,0,0,0.2);
+
+            /* APK OPTIMIZATION: Pull-to-refresh disable karne ke liye */
+            overscroll-behavior-y: contain;
+            touch-action: none;
         }
 
         /* Background Animation Logic */
@@ -910,6 +914,18 @@
     </div>
 
     <script>
+        // APK OPTIMIZATION: Pull-to-Refresh ko JavaScript level par block karne ke liye
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) return; 
+        }, { passive: false });
+
+        document.addEventListener('touchmove', function(e) {
+            // Screen refresh ko rokne ke liye
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
         const gridDisplay = document.getElementById('grid');
         const scoreDisplay = document.getElementById('score');
         const swipeCanvas = document.getElementById('swipe-canvas');
