@@ -67,9 +67,8 @@
             padding: 2.5%; /* px to % */
             box-sizing: border-box;
             touch-action: none; /* Mobile swipe ke liye */
-            box-shadow: 0 10px 20px rgba(0,0,0,0.4), 0 0 15px rgba(255,255,255,0.1);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
             position: relative;
-            perspective: 800px; /* 3D Effect support karne ke liye */
         }
         .cell {
             background-color: #2c3e50;
@@ -80,12 +79,9 @@
             font-size: 5vw; /* px to vw for dynamic text size */
             font-weight: bold;
             color: white;
-            /* Slide Animation ke liye transition */
+            /* Slide Animation ke liye transition - 3D properties removed for speed */
             transition: transform 0.15s ease-in-out, background-color 0.15s ease;
-            transform-style: preserve-3d;
             position: relative;
-            /* 3D look for cells */
-            box-shadow: inset -2px -2px 5px rgba(0,0,0,0.3), inset 2px 2px 5px rgba(255,255,255,0.1);
             pointer-events: none; /* Pointer events handled by parent grid */
         }
         
@@ -102,23 +98,17 @@
             100% { transform: scale(1); }
         }
         
-        /* NAYA CODE: Number Join hone par 3D box effect aur Chamak (Glow) */
-        @keyframes glowAndPop3D {
-            0% { 
-                transform: scale(1) translateZ(0px) rotateX(0deg);
-            }
-            50% { 
-                transform: scale(1.25) translateZ(30px) rotateX(10deg) rotateY(10deg); /* 3D Pop up */
-            }
-            100% { 
-                transform: scale(1) translateZ(0px) rotateX(0deg);
-            }
+        /* 3D effect removed from animation for performance optimization */
+        @keyframes glowAndPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
         }
 
         /* Chamak tab tak bani rahegi jab tak doosra merge na ho */
         .pop-effect {
-            animation: glowAndPop3D 0.4s ease-in-out;
-            box-shadow: 0 0 15px #00e5ff, 0 0 30px #00e5ff !important; /* Persistent Light Chamak */
+            animation: glowAndPop 0.3s ease-in-out;
+            box-shadow: 0 0 12px #00e5ff; 
             z-index: 5;
         }
         
@@ -250,7 +240,7 @@
             width: 70%; /* Naya responsive width */
         }
         #level-up-popup.active {
-            transform: translate(-50%, -50%) scale(1.1) rotateY(360deg);
+            transform: translate(-50%, -50%) scale(1.1);
             opacity: 1;
         }
         #level-up-popup h2 {
@@ -737,10 +727,10 @@
                 <p>4. Match tiles diagonally, horizontally, or vertically by drawing lines.</p>
                 
                 <h4>हिंदी में:</h4>
-                <p>1. समान नंबरों को एक साथ ले जाने aur जोड़ने के लिए स्क्रीन को स्वाइप करें।</p>
-                <p>2. दो समान नंबरों को मिलाने से एक बड़ा नंबर बनता है और पॉइंट्स मिलते हैं।</p>
-                <p>3. प्रो मोड में समय का ध्यान रखें। प्रत्येक स्तर के लिए समय सीमित है!</p>
-                <p>4. लाइन खींचकर टाइल्स को तिरछा, आड़ा या सीधा मिलाया जा सकता है।</p>
+                <p>1. समान नंबरों को एक साथ le jane aur jodne ke liye screen ko swipe karein.</p>
+                <p>2. Do saman numberon ko milane se ek bada number banta hai aur points milte hain.</p>
+                <p>3. Pro mode mein samay ka dhyan rakhein. Pratyek level ke liye samay seemit hai!</p>
+                <p>4. Line kheenchkar tiles ko tircha, aada ya seedha milaya ja sakta hai.</p>
             </div>
         </div>
     </div>
@@ -753,8 +743,8 @@
                 <h4>Game Integrity:</h4>
                 <p>If any user tries to hack the game, modify files, or use illegal cheating scripts to make high scores, their account/ID will be permanently blocked without any prior notice.</p>
                 
-                <h4>गेम अखंडता:</h4>
-                <p>अगर कोई भी यूजर गेम को हैक करने, फाइल्स को मॉडिफाई करने या हाई स्कोर बनाने के लिए अवैध चीटिंग स्क्रिप्ट का इस्तेमाल करेगा, तो उसकी आईडी को बिना किसी पूर्व सूचना के हमेशा के लिए ब्लॉक कर दिया जाएगा।</p>
+                <h4>Game Akhandta:</h4>
+                <p>Agar koi bhi user game ko hack karne, files ko modify karne ya high score banane ke liye avaidh cheating script ka istemal karega, toh uski ID ko bina kisi purv suchna ke hamesha ke liye block kar diya jayega.</p>
             </div>
         </div>
     </div>
