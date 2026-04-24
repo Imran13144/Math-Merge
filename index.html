@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Merge Math Game</title>
     <style>
         body {
@@ -21,12 +21,6 @@
             user-select: none;
             /* 3D Depth ke liye halka sa inner shadow */
             box-shadow: inset 0 0 100px rgba(0,0,0,0.2);
-            /* NAYA ADDITION: Pull-to-refresh disable karne ke liye aur APK optimization */
-            overscroll-behavior-y: contain;
-            position: fixed;
-            width: 100%;
-            -webkit-tap-highlight-color: transparent;
-            -webkit-touch-callout: none;
         }
 
         /* Background Animation Logic */
@@ -92,6 +86,7 @@
             position: relative;
             /* 3D look for cells */
             box-shadow: inset -2px -2px 5px rgba(0,0,0,0.3), inset 2px 2px 5px rgba(255,255,255,0.1);
+            pointer-events: none; /* Pointer events handled by parent grid */
         }
         
         /* PC view ke liye font adjustment */
@@ -522,7 +517,8 @@
             text-align: center;
             position: relative;
         }
-        
+
+        /* FIX: Dashboard Text Color to White */
         .dashboard-row {
             display: flex;
             justify-content: space-between;
@@ -531,6 +527,7 @@
             border-radius: 4px;
             border: 1px solid #1a3344;
             margin-bottom: 2%; /* px to % */
+            color: #ffffff; /* Font color white */
         }
         
         .hs-profile-pic {
@@ -688,7 +685,7 @@
 <body>
 
     <div class="left-sidebar" id="left-sidebar-menu">
-        <h3>Menu</h3>
+        <h3 style="color: #ffcc00;">Menu</h3>
         <button class="sidebar-btn" onclick="openMathMergeDashboard()">📊 Math Merge Data</button>
         <button class="sidebar-btn" onclick="openProfileModalFromSidebar()">👤 Profile</button>
         <button class="sidebar-btn" onclick="handleShareLink()">🔗 Share</button>
@@ -702,7 +699,7 @@
     <div class="modal-overlay" id="dashboard-modal">
         <div class="modal-card">
             <span class="modal-close-btn" onclick="closeModal('dashboard-modal')">&times;</span>
-            <h2>Math Merge Data</h2>
+            <h2 style="color: #ffcc00;">Math Merge Data</h2>
             <div style="text-align: left;">
                 <div class="dashboard-row">
                     <span>User Name:</span>
@@ -731,7 +728,7 @@
     <div class="modal-overlay" id="rules-modal">
         <div class="modal-card">
             <span class="modal-close-btn" onclick="closeModal('rules-modal')">&times;</span>
-            <h2>Game Rules</h2>
+            <h2 style="color: #ffcc00;">Game Rules</h2>
             <div class="text-modal-content">
                 <h4>In English:</h4>
                 <p>1. Swipe the screen to move and merge similar numbers together.</p>
@@ -751,7 +748,7 @@
     <div class="modal-overlay" id="terms-modal">
         <div class="modal-card">
             <span class="modal-close-btn" onclick="closeModal('terms-modal')">&times;</span>
-            <h2>Terms & Conditions</h2>
+            <h2 style="color: #ffcc00;">Terms & Conditions</h2>
             <div class="text-modal-content">
                 <h4>Game Integrity:</h4>
                 <p>If any user tries to hack the game, modify files, or use illegal cheating scripts to make high scores, their account/ID will be permanently blocked without any prior notice.</p>
@@ -775,24 +772,24 @@
     <div class="modal-overlay" id="profile-modal">
         <div class="modal-card">
             <span class="modal-close-btn" onclick="closeProfileModal()">&times;</span>
-            <h2>Update Profile</h2>
+            <h2 style="color: #ffcc00;">Update Profile</h2>
             
             <div class="profile-pic-container">
                 <img id="profile-img" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profile">
-                <label for="pic-upload" class="upload-btn">Change</label>
+                <label for="pic-upload" style="position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.6); color: white; cursor: pointer; font-size: 12px; padding: 2px 0;">Change</label>
                 <input type="file" id="pic-upload" style="display:none;" accept="image/*" onchange="handleProfilePic(this)">
             </div>
 
             <div class="input-group">
-                <label>User Name</label>
+                <label style="color: #ffcc00;">User Name</label>
                 <input type="text" id="prof-name" placeholder="Apna naya naam">
             </div>
             <div class="input-group">
-                <label>Mobile Number</label>
+                <label style="color: #ffcc00;">Mobile Number</label>
                 <input type="tel" id="prof-mobile" placeholder="Naya Mobile Number" readonly>
             </div>
             <div class="input-group">
-                <label>Password</label>
+                <label style="color: #ffcc00;">Password</label>
                 <input type="password" id="prof-pass" placeholder="Naya Password set karein">
                 <span class="eye-icon" style="top:25px;" onclick="togglePassVisibility('prof-pass')">👁️</span>
             </div>
@@ -808,17 +805,17 @@
         </div>
 
         <div class="auth-card" id="signup-card">
-            <h2>Sign Up</h2>
+            <h2 style="color: #ffcc00;">Sign Up</h2>
             <div class="input-group">
-                <label>Username</label>
+                <label style="color: #ffcc00;">Username</label>
                 <input type="text" id="signup-name" placeholder="Apna naam likhein">
             </div>
             <div class="input-group">
-                <label>Mobile Number</label>
+                <label style="color: #ffcc00;">Mobile Number</label>
                 <input type="tel" id="signup-mobile" placeholder="Mobile number dalein">
             </div>
             <div class="input-group">
-                <label>Password</label>
+                <label style="color: #ffcc00;">Password</label>
                 <input type="password" id="signup-pass" placeholder="Password set karein">
                 <span class="eye-icon" onclick="togglePassVisibility('signup-pass')">👁️</span>
             </div>
@@ -827,13 +824,13 @@
         </div>
 
         <div class="auth-card" id="login-card" style="display: none;">
-            <h2>Log In</h2>
+            <h2 style="color: #ffcc00;">Log In</h2>
             <div class="input-group">
-                <label>Mobile Number</label>
+                <label style="color: #ffcc00;">Mobile Number</label>
                 <input type="tel" id="login-mobile" placeholder="Registered mobile number">
             </div>
             <div class="input-group">
-                <label>Password</label>
+                <label style="color: #ffcc00;">Password</label>
                 <input type="password" id="login-pass" placeholder="Apna password dalein">
                 <span class="eye-icon" onclick="togglePassVisibility('login-pass')">👁️</span>
                 <div class="extra-links">
@@ -849,10 +846,10 @@
     <div id="mode-overlay">
         <button id="menu-trigger-btn" onclick="toggleLeftSidebar(true)">☰ Menu</button>
         
-        <div class="mode-container">
-            <h2>Select Game Mode</h2>
-            <button class="mode-btn normal-btn" onclick="startGameMode('normal')">Normal Play</button>
-            <button class="mode-btn pro-btn" onclick="startGameMode('pro')">Pro Play</button>
+        <div class="mode-container" style="text-align: center;">
+            <h2 style="color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Select Game Mode</h2>
+            <button class="mode-btn normal-btn" style="background: #2ecc71;" onclick="startGameMode('normal')">Normal Play</button>
+            <button class="mode-btn pro-btn" style="background: #e67e22;" onclick="startGameMode('pro')">Pro Play</button>
 
             <div class="highscore-title">🏆 Normal Mode Top Scores 🏆</div>
             <div class="highscore-row">
@@ -884,8 +881,8 @@
     <div id="game-over-overlay">
         <h2>GAME OVER</h2>
         <p id="game-over-msg">Aapka samay samapt ho gaya!</p>
-        <button onclick="resetGame()" style="background-color: #2ecc71; margin-bottom: 10px;">Dobara Khele</button>
-        <button onclick="backToMenuFromGameOver()" style="background-color: #7f8c8d;">Back</button>
+        <button onclick="resetGame()" style="background-color: #2ecc71; margin-bottom: 10px; width: 200px; padding: 15px; border-radius: 10px;">Dobara Khele</button>
+        <button onclick="backToMenuFromGameOver()" style="background-color: #7f8c8d; width: 200px; padding: 15px; border-radius: 10px;">Back</button>
     </div>
 
     <div class="header">
@@ -916,11 +913,6 @@
     </div>
 
     <script>
-        /* NAYA ADDITION: Pull-to-refresh aur default swipes ko prevent karne ke liye script */
-        document.addEventListener('touchmove', function (e) {
-            if (e.scale !== 1) { e.preventDefault(); }
-        }, { passive: false });
-
         const gridDisplay = document.getElementById('grid');
         const scoreDisplay = document.getElementById('score');
         const swipeCanvas = document.getElementById('swipe-canvas');
@@ -994,7 +986,8 @@
                     database.ref('users/' + mobile).set({
                         name: name, mobile: mobile, pass: pass,
                         profilePic: "https://cdn-icons-png.flaticon.com/512/149/149071.png",
-                        registrationDate: registrationDate
+                        registrationDate: registrationDate,
+                        lastLevel: 1 // Default level set
                     }).then(() => { alert("Signup safal raha! Ab login karein."); switchAuth('login'); });
                 }
             });
@@ -1042,13 +1035,22 @@
                 const activeUser = snapshot.val() || {};
                 const userName = activeUser.name || "Unknown";
                 const lastFourDigits = currentUserMobile.slice(-4);
-                normalHighScores.push({
-                    score: score, name: userName, mobile: "..." + lastFourDigits,
-                    profilePic: activeUser.profilePic || "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                
+                // Normal mode scores filter
+                if(gameMode === 'normal') {
+                    normalHighScores.push({
+                        score: score, name: userName, mobile: "..." + lastFourDigits,
+                        profilePic: activeUser.profilePic || "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                    });
+                    normalHighScores.sort((a, b) => b.score - a.score);
+                    normalHighScores = normalHighScores.slice(0, 3);
+                    database.ref('globalHighScores').set(normalHighScores);
+                }
+                
+                // Update latest level in any mode
+                database.ref('users/' + currentUserMobile).update({
+                    lastLevel: level
                 });
-                normalHighScores.sort((a, b) => b.score - a.score);
-                normalHighScores = normalHighScores.slice(0, 3);
-                database.ref('globalHighScores').set(normalHighScores);
             });
         }
 
@@ -1111,6 +1113,9 @@
                     const user = snapshot.val();
                     document.getElementById('dash-username').innerHTML = user.name;
                     document.getElementById('dash-mobile').innerHTML = user.mobile;
+                    // FIX: Always show the highest level reached or current session level
+                    const displayLevel = Math.max(level, user.lastLevel || 1);
+                    document.getElementById('dash-level').innerHTML = displayLevel;
                 }
                 document.getElementById('dashboard-modal').style.display = 'flex';
             });
@@ -1205,6 +1210,11 @@
             levelBox.classList.add('level-scroll-anim'); setTimeout(() => levelBox.classList.remove('level-scroll-anim'), 1000);
             levelUpPopup.style.display = 'block'; setTimeout(() => levelUpPopup.classList.add('active'), 10);
             setTimeout(() => { levelUpPopup.classList.remove('active'); setTimeout(() => levelUpPopup.style.display = 'none', 500); }, 1500);
+            
+            // Sync level to Firebase immediately on level up
+            if(currentUserMobile) {
+                database.ref('users/' + currentUserMobile).update({ lastLevel: level });
+            }
         }
 
         function checkLevelProgression() {
@@ -1232,9 +1242,34 @@
         document.addEventListener('keyup', control);
 
         let selectedPath = []; let isSwiping = false; let currentValue = null;
-        function getCellIndexFromPoint(x, y) { const rect = gridDisplay.getBoundingClientRect(); if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return null; const col = Math.floor((x - rect.left) / (rect.width / size)); const row = Math.floor((y - rect.top) / (rect.height / size)); if (col >= 0 && col < size && row >= 0 && row < size) return row * size + col; return null; }
         
-        function updateSwipeLine() { if (selectedPath.length < 1) { drawingLine.style.opacity = '0'; return; } drawingLine.style.opacity = '1'; const rect = gridDisplay.getBoundingClientRect(); let d = ''; selectedPath.forEach((idx, i) => { const cRect = squares[idx].getBoundingClientRect(); const cx = cRect.left - rect.left + cRect.width / 2; const cy = cRect.top - rect.top + cRect.height / 2; if (i === 0) d += `M ${cx} ${cy}`; else d += ` L ${cx} ${cy}`; }); drawingLine.setAttribute('d', d); }
+        // FIX: Optimized position tracking for smooth line drawing
+        function getCellIndexFromPoint(x, y) { 
+            const rect = gridDisplay.getBoundingClientRect(); 
+            if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return null; 
+            
+            const cellW = rect.width / size;
+            const cellH = rect.height / size;
+            const col = Math.floor((x - rect.left) / cellW); 
+            const row = Math.floor((y - rect.top) / cellH); 
+            
+            if (col >= 0 && col < size && row >= 0 && row < size) return row * size + col; 
+            return null; 
+        }
+        
+        function updateSwipeLine() { 
+            if (selectedPath.length < 1) { drawingLine.style.opacity = '0'; return; } 
+            drawingLine.style.opacity = '1'; 
+            const rect = gridDisplay.getBoundingClientRect(); 
+            let d = ''; 
+            selectedPath.forEach((idx, i) => { 
+                const cRect = squares[idx].getBoundingClientRect(); 
+                const cx = (cRect.left - rect.left) + (cRect.width / 2); 
+                const cy = (cRect.top - rect.top) + (cRect.height / 2); 
+                if (i === 0) d += `M ${cx} ${cy}`; else d += ` L ${cx} ${cy}`; 
+            }); 
+            drawingLine.setAttribute('d', d); 
+        }
 
         function handleSwipeMove(clientX, clientY) {
             if (!isSwiping || isGameOver) return;
@@ -1242,11 +1277,26 @@
             if (idx !== null) {
                 const val = squares[idx].innerHTML;
                 if (val !== '' && val !== '0') {
-                    if (selectedPath.length === 0) { currentValue = val; selectedPath.push(idx); squares[idx].classList.add('selected-cell'); playSwipeSoundLoud(); }
-                    else if (selectedPath.length >= 2 && idx === selectedPath[selectedPath.length - 2]) { let rem = selectedPath.pop(); squares[rem].classList.remove('selected-cell'); updateSwipeLine(); playSwipeSoundLoud(); }
+                    if (selectedPath.length === 0) { 
+                        currentValue = val; 
+                        selectedPath.push(idx); 
+                        squares[idx].classList.add('selected-cell'); 
+                        playSwipeSoundLoud(); 
+                    }
+                    else if (selectedPath.length >= 2 && idx === selectedPath[selectedPath.length - 2]) { 
+                        let rem = selectedPath.pop(); 
+                        squares[rem].classList.remove('selected-cell'); 
+                        playSwipeSoundLoud(); 
+                    }
                     else if (val === currentValue && !selectedPath.includes(idx)) {
                         const last = selectedPath[selectedPath.length - 1];
-                        if (Math.abs(Math.floor(last/size) - Math.floor(idx/size)) <= 1 && Math.abs((last%size) - (idx%size)) <= 1) { selectedPath.push(idx); squares[idx].classList.add('selected-cell'); playSwipeSoundLoud(); }
+                        const r1 = Math.floor(last/size), c1 = last%size;
+                        const r2 = Math.floor(idx/size), c2 = idx%size;
+                        if (Math.abs(r1 - r2) <= 1 && Math.abs(c1 - c2) <= 1) { 
+                            selectedPath.push(idx); 
+                            squares[idx].classList.add('selected-cell'); 
+                            playSwipeSoundLoud(); 
+                        }
                     }
                     updateSwipeLine();
                 }
@@ -1254,13 +1304,24 @@
         }
 
         function endSwipe() {
-            if (!isSwiping || isGameOver) return; isSwiping = false; drawingLine.style.opacity = '0'; drawingLine.setAttribute('d', '');
+            if (!isSwiping || isGameOver) return; 
+            isSwiping = false; 
+            drawingLine.style.opacity = '0'; 
+            drawingLine.setAttribute('d', '');
             selectedPath.forEach(idx => squares[idx].classList.remove('selected-cell'));
             if (selectedPath.length >= 2) {
                 let total = 0; let lastIdx = selectedPath[selectedPath.length - 1];
-                selectedPath.forEach(idx => { total += parseInt(squares[idx].innerHTML); squares[idx].innerHTML = ''; });
-                squares[lastIdx].innerHTML = total; score += total; scoreDisplay.innerHTML = score;
-                checkLevelProgression(); triggerPopEffect(squares[lastIdx]); playJoinSoundLoud(); resetTimerForCurrentLevel();
+                selectedPath.forEach(idx => { 
+                    total += parseInt(squares[idx].innerHTML); 
+                    squares[idx].innerHTML = ''; 
+                });
+                squares[lastIdx].innerHTML = total; 
+                score += total; 
+                scoreDisplay.innerHTML = score;
+                checkLevelProgression(); 
+                triggerPopEffect(squares[lastIdx]); 
+                playJoinSoundLoud(); 
+                resetTimerForCurrentLevel();
                 setTimeout(() => { refillGrid(); if (gameMode === 'normal') checkAvailableMoves(); }, 150);
             }
             selectedPath = []; currentValue = null; updateStyles();
@@ -1276,19 +1337,35 @@
             triggerGameOver("nomoves");
         }
 
-        gridDisplay.addEventListener('touchstart', (e) => { isSwiping = true; handleSwipeMove(e.touches[0].clientX, e.touches[0].clientY); }, false);
-        gridDisplay.addEventListener('touchmove', (e) => handleSwipeMove(e.touches[0].clientX, e.touches[0].clientY), false);
+        gridDisplay.addEventListener('touchstart', (e) => { 
+            isSwiping = true; 
+            handleSwipeMove(e.touches[0].clientX, e.touches[0].clientY); 
+            e.preventDefault(); 
+        }, {passive: false});
+        gridDisplay.addEventListener('touchmove', (e) => { 
+            handleSwipeMove(e.touches[0].clientX, e.touches[0].clientY); 
+            e.preventDefault(); 
+        }, {passive: false});
         gridDisplay.addEventListener('touchend', endSwipe, false);
         gridDisplay.addEventListener('mousedown', (e) => { isSwiping = true; handleSwipeMove(e.clientX, e.clientY); });
-        document.addEventListener('mousemove', (e) => { if(isSwiping) handleSwipeMove(e.clientX, e.clientY); });
-        document.addEventListener('mouseup', endSwipe);
+        window.addEventListener('mousemove', (e) => { if(isSwiping) handleSwipeMove(e.clientX, e.clientY); });
+        window.addEventListener('mouseup', endSwipe);
 
         function resetGame() { score = 0; level = 1; timeLeft = 60; isGameOver = false; scoreDisplay.innerHTML = 0; levelDisplay.innerHTML = 1; timerDisplay.innerHTML = 60; gameOverOverlay.style.display = 'none'; levelUpPopup.style.display = 'none'; createBoard(); startTimerSystem(); }
         createBoard();
 
         window.addEventListener('load', () => {
             const saved = localStorage.getItem('currentUserMobile');
-            if (saved) { database.ref('users/' + saved).once('value').then((snap) => { if (snap.exists()) { currentUserMobile = saved; document.getElementById('auth-overlay').style.display = 'none'; document.getElementById('mode-overlay').style.display = 'flex'; fetchGlobalScores(); } }); }
+            if (saved) { 
+                database.ref('users/' + saved).once('value').then((snap) => { 
+                    if (snap.exists()) { 
+                        currentUserMobile = saved; 
+                        document.getElementById('auth-overlay').style.display = 'none'; 
+                        document.getElementById('mode-overlay').style.display = 'flex'; 
+                        fetchGlobalScores(); 
+                    } 
+                }); 
+            }
         });
     </script>
 </body>
