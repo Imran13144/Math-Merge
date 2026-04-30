@@ -32,32 +32,42 @@
 
         .header {
             text-align: center;
-            margin-bottom: 2%; /* px to % */
+            margin-bottom: 1%; /* Kam kiya taaki space bache */
+            width: 100%;
         }
         h1 {
             color: #333;
-            font-size: 6vw; /* px to vw for title responsiveness */
-            margin: 0 0 1% 0;
+            font-size: 5vw; /* Thoda chhota kiya mobile ke liye */
+            margin: 0 0 5px 0;
             /* Title ko thoda 3D look dene ke liye */
             text-shadow: 2px 2px 4px rgba(255,255,255,0.5);
         }
+
+        /* Layout Adjustment for Mobile Screen */
+        .top-stats-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
         .score-container {
             background: #4A90E2;
             color: white;
-            padding: 1% 5%; /* px to % */
-            border-radius: 20px;
-            font-size: 18px;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 16px;
             font-weight: bold;
-            display: inline-block;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         
         /* 6x6 Grid aur Bade Boxes ke liye CSS badlav */
         #grid {
-            width: 90vw; /* px to vw for full screen adaptation */
-            height: 90vw; /* height square rakhne ke liye vw */
-            max-width: 420px; /* PC par zyada bada na ho */
-            max-height: 420px;
+            width: 85vw; /* Thoda kam kiya taaki vertical space bache */
+            height: 85vw; 
+            max-width: 400px;
+            max-height: 400px;
             background-color: #34495e;
             border-radius: 10px;
             display: grid;
@@ -129,24 +139,24 @@
         .n16 { background-color: #e17055; }
 
         .controls {
-            margin-top: 4%; /* px to % */
+            margin-top: 2%; 
             text-align: center;
         }
         button {
             background-color: #e74c3c;
             color: white;
             border: none;
-            padding: 2% 6%; /* px to % */
+            padding: 8px 15px; 
             border-radius: 5px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .instructions {
-            margin-top: 2%; /* px to % */
+            margin-top: 5px;
             color: #333; /* Darker for animated BG visibility */
-            font-size: 14px;
+            font-size: 12px;
             font-weight: bold;
         }
 
@@ -179,19 +189,21 @@
         /* NAYA CODE: Naye counters aur Game Over overlay ke liye CSS */
         .header-stats {
             display: flex;
-            gap: 2%; /* px to % */
+            gap: 5px;
             justify-content: center;
-            margin-top: 1%; /* px to % */
+            flex-wrap: wrap; /* Takki niche shift ho sakein mobile pe */
+            padding: 0 5px;
         }
         .stat-box {
             background: #4A90E2;
             color: white;
-            padding: 1.5% 4%; /* px to % */
-            border-radius: 15px;
-            font-size: 16px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 13px;
             font-weight: bold;
             box-shadow: 0 3px 5px rgba(0,0,0,0.1);
             transition: transform 0.3s;
+            min-width: 60px;
         }
         
         /* FIX CODE: Game over show hone ke liye isko global full overlay banaya gaya hai */
@@ -268,9 +280,9 @@
         /* NAYA CODE: Sound on/off button ke liye CSS */
         .sound-btn {
             background-color: #9b59b6;
-            padding: 1.5% 3%; /* px to % */
-            border-radius: 15px;
-            font-size: 16px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 13px;
             font-weight: bold;
             color: white;
             cursor: pointer;
@@ -284,9 +296,9 @@
         /* Back Button CSS */
         .back-btn {
             background-color: #7f8c8d;
-            padding: 1.5% 3%; /* px to % */
-            border-radius: 15px;
-            font-size: 16px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 13px;
             font-weight: bold;
             color: white;
             cursor: pointer;
@@ -725,12 +737,14 @@
                 <p>2. Merging two identical numbers creates a bigger number and rewards points.</p>
                 <p>3. In Pro mode, keep track of time. Time is limited for each level!</p>
                 <p>4. Match tiles diagonally, horizontally, or vertically by drawing lines.</p>
+                <p>5. Reach the Target Score to level up automatically.</p>
                 
                 <h4>हिंदी में:</h4>
-                <p>1. समान नंबरों को एक साथ le jane aur jodne ke liye screen ko swipe karein.</p>
+                <p>1. समान numberon ko ek saath le jane aur jodne ke liye screen ko swipe karein.</p>
                 <p>2. Do saman numberon ko milane se ek bada number banta hai aur points milte hain.</p>
                 <p>3. Pro mode mein samay ka dhyan rakhein. Pratyek level ke liye samay seemit hai!</p>
                 <p>4. Line kheenchkar tiles ko tircha, aada ya seedha milaya ja sakta hai.</p>
+                <p>5. Level badhane ke liye Target Score poora karein.</p>
             </div>
         </div>
     </div>
@@ -877,8 +891,13 @@
 
     <div class="header">
         <h1>Merge Math Numbers</h1>
-        <div class="header-stats">
+        
+        <div class="top-stats-row">
             <div class="score-container">Score: <span id="score">0</span></div>
+            <div class="stat-box" id="target-box" style="background-color: #3498db;">Target: <span id="target-score">100</span></div>
+        </div>
+
+        <div class="header-stats">
             <div class="stat-box" id="timer-box" style="background-color: #e67e22;">Time: <span id="timer">60</span>s</div>
             <div class="stat-box" id="level-box" style="background-color: #2ecc71;">Level: <span id="level">1</span></div>
             <button class="sound-btn" id="sound-toggle" onclick="toggleSound()">🔊 Sound: ON</button>
@@ -909,6 +928,7 @@
         const drawingLine = document.getElementById('drawing-line');
         const timerDisplay = document.getElementById('timer');
         const levelDisplay = document.getElementById('level');
+        const targetDisplay = document.getElementById('target-score'); // New Reference
         const gameOverOverlay = document.getElementById('game-over-overlay');
         const gameOverMsg = document.getElementById('game-over-msg');
         const levelUpPopup = document.getElementById('level-up-popup');
@@ -917,8 +937,15 @@
         
         const size = 6;
         let squares = [];
+        
+        /* --------------------------------------------------- */
+        /* NEW LEVEL SYSTEM VARIABLES (Replaced Old Ones)      */
+        /* --------------------------------------------------- */
         let score = 0;
         let level = 1;
+        let nextLevelScore = 100; // Starting target for Level 2
+        /* --------------------------------------------------- */
+
         let timeLeft = 60;
         let timerId = null;
         let isGameOver = false;
@@ -977,7 +1004,7 @@
                         name: name, mobile: mobile, pass: pass,
                         profilePic: "https://cdn-icons-png.flaticon.com/512/149/149071.png",
                         registrationDate: registrationDate,
-                        lastLevel: 1 // Default level set
+                        lastLevel: 1 
                     }).then(() => { alert("Signup safal raha! Ab login karein."); switchAuth('login'); });
                 }
             });
@@ -1026,7 +1053,6 @@
                 const userName = activeUser.name || "Unknown";
                 const lastFourDigits = currentUserMobile.slice(-4);
                 
-                // Normal mode scores filter
                 if(gameMode === 'normal') {
                     normalHighScores.push({
                         score: score, name: userName, mobile: "..." + lastFourDigits,
@@ -1037,10 +1063,13 @@
                     database.ref('globalHighScores').set(normalHighScores);
                 }
                 
-                // Update latest level in any mode
                 database.ref('users/' + currentUserMobile).update({
-                    lastLevel: level
+                    lastLevel: level,
+                    lastScore: score
                 });
+                
+                localStorage.setItem('saved_level', level);
+                localStorage.setItem('saved_score', score);
             });
         }
 
@@ -1103,7 +1132,6 @@
                     const user = snapshot.val();
                     document.getElementById('dash-username').innerHTML = user.name;
                     document.getElementById('dash-mobile').innerHTML = user.mobile;
-                    // FIX: Always show the highest level reached or current session level
                     const displayLevel = Math.max(level, user.lastLevel || 1);
                     document.getElementById('dash-level').innerHTML = displayLevel;
                 }
@@ -1151,7 +1179,7 @@
             let val; let attempts = 0;
             while (attempts < 50) {
                 val = Math.floor(Math.random() * 5) + 1;
-                // Dynamic block logic based on current level
+                // Block certain numbers based on level
                 if (level >= 10 && val === 9) { attempts++; continue; }
                 if (level >= 9 && val === 8) { attempts++; continue; }
                 if (level >= 8 && val === 7) { attempts++; continue; }
@@ -1177,16 +1205,7 @@
         }
 
         function startTimerSystem() { clearInterval(timerId); if (gameMode === 'normal') return; timerId = setInterval(() => { if (!isGameOver) { timeLeft--; timerDisplay.innerHTML = timeLeft; if (timeLeft <= 0) triggerGameOver("timeout"); } }, 1000); }
-        function resetTimerForCurrentLevel() { 
-            if (gameMode === 'normal') return; 
-            if (level === 1) timeLeft = 60; 
-            else if (level === 2) timeLeft = 50; 
-            else if (level === 3) timeLeft = 40; 
-            else if (level === 4) timeLeft = 30; 
-            else if (level === 5) timeLeft = 20; 
-            else timeLeft = Math.max(10, 20 - level); // Minimum 10s guarantee
-            timerDisplay.innerHTML = timeLeft; 
-        }
+        function resetTimerForCurrentLevel() { if (gameMode === 'normal') return; if (level === 1) timeLeft = 60; else if (level === 2) timeLeft = 55; else if (level === 3) timeLeft = 50; else if (level === 4) timeLeft = 45; else if (level === 5) timeLeft = 40; else timeLeft = 30; timerDisplay.innerHTML = timeLeft; }
 
         function removeBlockedTilesFromBoard() {
             for (let i = 0; i < squares.length; i++) {
@@ -1211,47 +1230,45 @@
             levelUpPopup.style.display = 'block'; setTimeout(() => levelUpPopup.classList.add('active'), 10);
             setTimeout(() => { levelUpPopup.classList.remove('active'); setTimeout(() => levelUpPopup.style.display = 'none', 500); }, 1500);
             
-            // Sync level to Firebase immediately on level up
             if(currentUserMobile) {
                 database.ref('users/' + currentUserMobile).update({ lastLevel: level });
             }
         }
 
-        /* NAYA CODE: Level Calculation Logic Fixed for INFINITE PROGRESSION */
-        function getLevelFromScore(currentScore) {
-            // Fibonacci Sequence based thresholds
-            const thresholds = [0, 100, 200, 300, 500, 800, 1300, 2100, 3400, 5500];
-            
-            // Level 1-10 check from thresholds array
-            for (let i = thresholds.length - 1; i >= 0; i--) {
-                if (currentScore >= thresholds[i]) return i + 1;
-            }
-            
-            // Level 11+ Infinite logic
-            // Har naya level pichle gap ka 1.6x (phi) hoga
-            let lastThreshold = 5500;
-            let currentGap = 2100;
-            let calcLevel = 10;
-            
-            while (currentScore >= lastThreshold + (currentGap * 1.6)) {
-                currentGap = Math.floor(currentGap * 1.6);
-                lastThreshold += currentGap;
-                calcLevel++;
-            }
-            return calcLevel;
+        /* --------------------------------------------------- */
+        /* NEW LEVEL PROGRESSION SYSTEM (Core Functions)       */
+        /* --------------------------------------------------- */
+        
+        function calculateNextLevelScore(currentLvl, prevTarget) {
+            // Formula: Next Score = (Previous Target × 1.4) + (Level × 10)
+            let rawNext = (prevTarget * 1.4) + (currentLvl * 10);
+            return Math.floor(rawNext);
         }
 
-        function checkLevelProgression() {
-            let oldLevel = level;
-            level = getLevelFromScore(score);
-
-            levelDisplay.innerHTML = level;
-            if (oldLevel !== level) { 
+        function checkLevelUp() {
+            if (score >= nextLevelScore) {
+                // Perform Level Up
+                level++;
+                let previousTarget = nextLevelScore;
+                nextLevelScore = calculateNextLevelScore(level, previousTarget);
+                
+                updateLevelUI();
                 resetTimerForCurrentLevel(); 
                 showLevelUpPopup(); 
                 removeBlockedTilesFromBoard(); 
+                
+                // Recursively check in case score is very high
+                checkLevelUp();
             }
         }
+
+        function updateLevelUI() {
+            levelDisplay.innerHTML = level;
+            targetDisplay.innerHTML = nextLevelScore;
+            scoreDisplay.innerHTML = score;
+        }
+
+        /* --------------------------------------------------- */
 
         function triggerGameOver(reason) { isGameOver = true; clearInterval(timerId); checkAndSaveHighScore(); gameOverMsg.innerHTML = (reason === "timeout") ? "Aapka samay samapt ho gaya!" : "Koi move baki nahi hai!"; gameOverOverlay.style.display = 'flex'; }
 
@@ -1260,8 +1277,8 @@
         function moveDown() { let moved = false; for (let i = 0; i < size; i++) { let col = []; for (let j = 0; j < size; j++) col.push(parseInt(squares[i+(j*size)].innerHTML) || 0); let original = col.join(','); let filtered = col.filter(n => n); let newCol = Array(size - filtered.length).fill('').concat(filtered); for (let j = 0; j < size; j++) squares[i+(j*size)].innerHTML = newCol[j]; if(original !== newCol.join(',')) moved = true; } return moved; }
         function moveUp() { let moved = false; for (let i = 0; i < size; i++) { let col = []; for (let j = 0; j < size; j++) col.push(parseInt(squares[i+(j*size)].innerHTML) || 0); let original = col.join(','); let filtered = col.filter(n => n); let newCol = filtered.concat(Array(size - filtered.length).fill('')); for (let j = 0; j < size; j++) squares[i+(j*size)].innerHTML = newCol[j]; if(original !== newCol.join(',')) moved = true; } return moved; }
 
-        function combineRow() { for (let i = 0; i < (size * size) - 1; i++) { if ((i+1) % size !== 0 && squares[i].innerHTML === squares[i+1].innerHTML && squares[i].innerHTML !== '') { let total = parseInt(squares[i].innerHTML) + parseInt(squares[i+1].innerHTML); squares[i].innerHTML = total; squares[i+1].innerHTML = ''; score += total; scoreDisplay.innerHTML = score; checkLevelProgression(); triggerPopEffect(squares[i]); } } updateStyles(); }
-        function combineColumn() { for (let i = 0; i < size * (size - 1); i++) { if (squares[i].innerHTML === squares[i+size].innerHTML && squares[i].innerHTML !== '') { let total = parseInt(squares[i].innerHTML) + parseInt(squares[i+size].innerHTML); squares[i].innerHTML = total; squares[i+size].innerHTML = ''; score += total; scoreDisplay.innerHTML = score; checkLevelProgression(); triggerPopEffect(squares[i]); } } updateStyles(); }
+        function combineRow() { for (let i = 0; i < (size * size) - 1; i++) { if ((i+1) % size !== 0 && squares[i].innerHTML === squares[i+1].innerHTML && squares[i].innerHTML !== '') { let total = parseInt(squares[i].innerHTML) + parseInt(squares[i+1].innerHTML); squares[i].innerHTML = total; squares[i+1].innerHTML = ''; score += total; checkLevelUp(); updateLevelUI(); triggerPopEffect(squares[i]); } } updateStyles(); }
+        function combineColumn() { for (let i = 0; i < size * (size - 1); i++) { if (squares[i].innerHTML === squares[i+size].innerHTML && squares[i].innerHTML !== '') { let total = parseInt(squares[i].innerHTML) + parseInt(squares[i+size].innerHTML); squares[i].innerHTML = total; squares[i+size].innerHTML = ''; score += total; checkLevelUp(); updateLevelUI(); triggerPopEffect(squares[i]); } } updateStyles(); }
         
         function triggerPopEffect(element) { const existing = document.querySelector('.pop-effect'); if (existing) existing.classList.remove('pop-effect'); element.classList.add('pop-effect'); }
 
@@ -1272,16 +1289,13 @@
 
         let selectedPath = []; let isSwiping = false; let currentValue = null;
         
-        // FIX: Optimized position tracking for smooth line drawing
         function getCellIndexFromPoint(x, y) { 
             const rect = gridDisplay.getBoundingClientRect(); 
             if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return null; 
-            
             const cellW = rect.width / size;
             const cellH = rect.height / size;
             const col = Math.floor((x - rect.left) / cellW); 
             const row = Math.floor((y - rect.top) / cellH); 
-            
             if (col >= 0 && col < size && row >= 0 && row < size) return row * size + col; 
             return null; 
         }
@@ -1346,8 +1360,10 @@
                 });
                 squares[lastIdx].innerHTML = total; 
                 score += total; 
-                scoreDisplay.innerHTML = score;
-                checkLevelProgression(); 
+                
+                checkLevelUp(); // Check for progression
+                updateLevelUI(); // Refresh UI
+                
                 triggerPopEffect(squares[lastIdx]); 
                 playJoinSoundLoud(); 
                 resetTimerForCurrentLevel();
@@ -1380,7 +1396,20 @@
         window.addEventListener('mousemove', (e) => { if(isSwiping) handleSwipeMove(e.clientX, e.clientY); });
         window.addEventListener('mouseup', endSwipe);
 
-        function resetGame() { score = 0; level = 1; timeLeft = 60; isGameOver = false; scoreDisplay.innerHTML = 0; levelDisplay.innerHTML = 1; timerDisplay.innerHTML = 60; gameOverOverlay.style.display = 'none'; levelUpPopup.style.display = 'none'; createBoard(); startTimerSystem(); }
+        function resetGame() { 
+            score = 0; 
+            level = 1; 
+            nextLevelScore = 100;
+            timeLeft = 60; 
+            isGameOver = false; 
+            updateLevelUI();
+            timerDisplay.innerHTML = 60; 
+            gameOverOverlay.style.display = 'none'; 
+            levelUpPopup.style.display = 'none'; 
+            createBoard(); 
+            startTimerSystem(); 
+        }
+        
         createBoard();
 
         window.addEventListener('load', () => {
