@@ -1151,6 +1151,7 @@
             let val; let attempts = 0;
             while (attempts < 50) {
                 val = Math.floor(Math.random() * 5) + 1;
+                // Dynamic block logic based on current level
                 if (level >= 10 && val === 9) { attempts++; continue; }
                 if (level >= 9 && val === 8) { attempts++; continue; }
                 if (level >= 8 && val === 7) { attempts++; continue; }
@@ -1176,7 +1177,16 @@
         }
 
         function startTimerSystem() { clearInterval(timerId); if (gameMode === 'normal') return; timerId = setInterval(() => { if (!isGameOver) { timeLeft--; timerDisplay.innerHTML = timeLeft; if (timeLeft <= 0) triggerGameOver("timeout"); } }, 1000); }
-        function resetTimerForCurrentLevel() { if (gameMode === 'normal') return; if (level === 1) timeLeft = 60; else if (level === 2) timeLeft = 50; else if (level === 3) timeLeft = 40; else if (level === 4) timeLeft = 30; else if (level === 5) timeLeft = 20; else timeLeft = 10; timerDisplay.innerHTML = timeLeft; }
+        function resetTimerForCurrentLevel() { 
+            if (gameMode === 'normal') return; 
+            if (level === 1) timeLeft = 60; 
+            else if (level === 2) timeLeft = 50; 
+            else if (level === 3) timeLeft = 40; 
+            else if (level === 4) timeLeft = 30; 
+            else if (level === 5) timeLeft = 20; 
+            else timeLeft = Math.max(10, 20 - level); // Minimum 10s guarantee
+            timerDisplay.innerHTML = timeLeft; 
+        }
 
         function removeBlockedTilesFromBoard() {
             for (let i = 0; i < squares.length; i++) {
@@ -1207,31 +1217,33 @@
             }
         }
 
-        // NAYA CODE: Level Calculation Logic Fixed (Fibonacci based progression)
+        /* NAYA CODE: Level Calculation Logic Fixed for INFINITE PROGRESSION */
+        function getLevelFromScore(currentScore) {
+            // Fibonacci Sequence based thresholds
+            const thresholds = [0, 100, 200, 300, 500, 800, 1300, 2100, 3400, 5500];
+            
+            // Level 1-10 check from thresholds array
+            for (let i = thresholds.length - 1; i >= 0; i--) {
+                if (currentScore >= thresholds[i]) return i + 1;
+            }
+            
+            // Level 11+ Infinite logic
+            // Har naya level pichle gap ka 1.6x (phi) hoga
+            let lastThreshold = 5500;
+            let currentGap = 2100;
+            let calcLevel = 10;
+            
+            while (currentScore >= lastThreshold + (currentGap * 1.6)) {
+                currentGap = Math.floor(currentGap * 1.6);
+                lastThreshold += currentGap;
+                calcLevel++;
+            }
+            return calcLevel;
+        }
+
         function checkLevelProgression() {
             let oldLevel = level;
-            
-            // Level 1: 0-99
-            // Level 2: 100-199
-            // Level 3: 200-299
-            // Level 4: Level 2 (100) + Level 3 (200) = 300
-            // Level 5: Level 3 (200) + Level 4 (300) = 500
-            // Level 6: Level 4 (300) + Level 5 (500) = 800
-            // Level 7: Level 5 (500) + Level 6 (800) = 1300
-            // Level 8: Level 6 (800) + Level 7 (1300) = 2100
-            // Level 9: Level 7 (1300) + Level 8 (2100) = 3400
-            // Level 10: Level 8 (2100) + Level 9 (3400) = 5500
-            
-            if (score >= 5500) level = 10; 
-            else if (score >= 3400) level = 9; 
-            else if (score >= 2100) level = 8; 
-            else if (score >= 1300) level = 7; 
-            else if (score >= 800) level = 6; 
-            else if (score >= 500) level = 5; 
-            else if (score >= 300) level = 4; 
-            else if (score >= 200) level = 3; 
-            else if (score >= 100) level = 2;
-            else level = 1;
+            level = getLevelFromScore(score);
 
             levelDisplay.innerHTML = level;
             if (oldLevel !== level) { 
