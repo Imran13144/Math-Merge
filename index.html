@@ -1207,11 +1207,38 @@
             }
         }
 
+        // NAYA CODE: Level Calculation Logic Fixed (Fibonacci based progression)
         function checkLevelProgression() {
             let oldLevel = level;
-            if (score >= 5500) level = 10; else if (score >= 3400) level = 9; else if (score >= 2100) level = 8; else if (score >= 1300) level = 7; else if (score >= 800) level = 6; else if (score >= 500) level = 5; else if (score >= 300) level = 4; else if (score >= 200) level = 3; else if (score >= 100) level = 2;
+            
+            // Level 1: 0-99
+            // Level 2: 100-199
+            // Level 3: 200-299
+            // Level 4: Level 2 (100) + Level 3 (200) = 300
+            // Level 5: Level 3 (200) + Level 4 (300) = 500
+            // Level 6: Level 4 (300) + Level 5 (500) = 800
+            // Level 7: Level 5 (500) + Level 6 (800) = 1300
+            // Level 8: Level 6 (800) + Level 7 (1300) = 2100
+            // Level 9: Level 7 (1300) + Level 8 (2100) = 3400
+            // Level 10: Level 8 (2100) + Level 9 (3400) = 5500
+            
+            if (score >= 5500) level = 10; 
+            else if (score >= 3400) level = 9; 
+            else if (score >= 2100) level = 8; 
+            else if (score >= 1300) level = 7; 
+            else if (score >= 800) level = 6; 
+            else if (score >= 500) level = 5; 
+            else if (score >= 300) level = 4; 
+            else if (score >= 200) level = 3; 
+            else if (score >= 100) level = 2;
+            else level = 1;
+
             levelDisplay.innerHTML = level;
-            if (oldLevel !== level) { resetTimerForCurrentLevel(); showLevelUpPopup(); removeBlockedTilesFromBoard(); }
+            if (oldLevel !== level) { 
+                resetTimerForCurrentLevel(); 
+                showLevelUpPopup(); 
+                removeBlockedTilesFromBoard(); 
+            }
         }
 
         function triggerGameOver(reason) { isGameOver = true; clearInterval(timerId); checkAndSaveHighScore(); gameOverMsg.innerHTML = (reason === "timeout") ? "Aapka samay samapt ho gaya!" : "Koi move baki nahi hai!"; gameOverOverlay.style.display = 'flex'; }
