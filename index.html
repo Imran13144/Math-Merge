@@ -79,6 +79,7 @@
             touch-action: none; /* Mobile swipe ke liye */
             box-shadow: 0 10px 20px rgba(0,0,0,0.4);
             position: relative;
+            will-change: transform; /* Performance optimization */
         }
         .cell {
             background-color: #2c3e50;
@@ -89,8 +90,8 @@
             font-size: 5vw; /* px to vw for dynamic text size */
             font-weight: bold;
             color: white;
-            /* Slide Animation ke liye transition - 3D properties removed for speed */
-            transition: transform 0.15s ease-in-out, background-color 0.15s ease;
+            /* Slide Animation ke liye transition - Fast 0.1s */
+            transition: transform 0.1s ease-in-out, background-color 0.1s ease;
             position: relative;
             pointer-events: none; /* Pointer events handled by parent grid */
         }
@@ -104,20 +105,20 @@
         /* Merge Animation (Pop effect) */
         @keyframes pop {
             0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
+            50% { transform: scale(1.1); }
             100% { transform: scale(1); }
         }
         
         /* 3D effect removed from animation for performance optimization */
         @keyframes glowAndPop {
             0% { transform: scale(1); }
-            50% { transform: scale(1.15); }
+            50% { transform: scale(1.1); }
             100% { transform: scale(1); }
         }
 
         /* Chamak tab tak bani rahegi jab tak doosra merge na ho */
         .pop-effect {
-            animation: glowAndPop 0.3s ease-in-out;
+            animation: glowAndPop 0.2s ease-in-out;
             box-shadow: 0 0 12px #00e5ff; 
             z-index: 5;
         }
@@ -176,9 +177,9 @@
             fill: none;
             stroke-linecap: round;
             stroke-linejoin: round;
-            filter: drop-shadow(0 0 5px #00e5ff);
+            filter: drop-shadow(0 0 3px #00e5ff);
             opacity: 0;
-            transition: opacity 0.1s;
+            transition: opacity 0.05s;
         }
         /* Touch hone par highlight effect */
         .selected-cell {
@@ -247,7 +248,7 @@
             z-index: 100;
             font-weight: bold;
             pointer-events: none;
-            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s;
             opacity: 0;
             width: 70%; /* Naya responsive width */
         }
@@ -382,7 +383,7 @@
             position: relative;
         }
         
-        .input-group input {
+        .input-group input, .input-group select {
             width: 100%;
             padding: 3%; /* px to % */
             background: #080f14;
@@ -680,6 +681,50 @@
         .hs-third { border-color: #CD7F32; background: linear-gradient(to bottom, #ffffff, #faf3ee); }
         .hs-first .score-text { color: #d4af37; }
         .hs-first .rank-text { color: #d4af37; }
+
+        /* --------------------------- */
+        /* NEW ROOM UI STYLES */
+        /* --------------------------- */
+        #room-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #080f14;
+            z-index: 1100;
+            display: none;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            color: white;
+        }
+        .wallet-display {
+            background: #b38f00;
+            color: #000;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .room-card {
+            background: #0f1c24;
+            border: 1px solid #ffcc00;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .room-info h4 { margin: 0; color: #ffcc00; }
+        .room-info p { margin: 5px 0; font-size: 12px; }
+        .win-history-item {
+            background: #080f14;
+            border-left: 4px solid #2ecc71;
+            padding: 10px;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
     </style>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -689,13 +734,23 @@
     <div class="left-sidebar" id="left-sidebar-menu">
         <h3 style="color: #ffcc00;">Menu</h3>
         <button class="sidebar-btn" onclick="openMathMergeDashboard()">📊 Math Merge Data</button>
+        <button class="sidebar-btn" onclick="openWinHistory()">🏆 Win History</button>
         <button class="sidebar-btn" onclick="openProfileModalFromSidebar()">👤 Profile</button>
-        <button class="sidebar-btn" onclick="handleShareLink()">🔗 Share</button>
+        <button class="sidebar-btn" onclick="handleShareLink()">🔗 Share & Refer</button>
         <button class="sidebar-btn" onclick="openGameRules()">📜 Game Rules</button>
         <button class="sidebar-btn" onclick="openTermConditions()">📋 Terms & Conditions</button>
         <button class="sidebar-btn" onclick="openWhatsAppHelp()">📞 Help</button>
         <button class="sidebar-btn" onclick="handleLogout()">🚪 Logout</button>
         <button class="sidebar-close-btn" onclick="toggleLeftSidebar(false)">Close Menu</button>
+    </div>
+
+    <div class="modal-overlay" id="history-modal">
+        <div class="modal-card">
+            <span class="modal-close-btn" onclick="closeModal('history-modal')">&times;</span>
+            <h2 style="color: #ffcc00;">Win History</h2>
+            <div id="win-history-list" class="text-modal-content">
+                </div>
+        </div>
     </div>
 
     <div class="modal-overlay" id="dashboard-modal">
@@ -712,6 +767,10 @@
                     <span id="dash-mobile">****</span>
                 </div>
                 <div class="dashboard-row">
+                    <span>Refer Code:</span>
+                    <span id="dash-refercode" style="color: #00e5ff;">-</span>
+                </div>
+                <div class="dashboard-row">
                     <span>Current Score:</span>
                     <span id="dash-score">0</span>
                 </div>
@@ -722,6 +781,10 @@
                 <div class="dashboard-row">
                     <span>Game Mode:</span>
                     <span id="dash-mode">-</span>
+                </div>
+                <div class="dashboard-row">
+                    <span>Wallet Coins:</span>
+                    <span id="dash-coins" style="color: #ffcc00;">0</span>
                 </div>
             </div>
         </div>
@@ -738,6 +801,7 @@
                 <p>3. In Pro mode, keep track of time. Time is limited for each level!</p>
                 <p>4. Match tiles diagonally, horizontally, or vertically by drawing lines.</p>
                 <p>5. Reach the Target Score to level up automatically.</p>
+                <p>6. Refer a friend and get 10 coins bonus!</p>
                 
                 <h4>हिंदी में:</h4>
                 <p>1. समान numberon ko ek saath le jane aur jodne ke liye screen ko swipe karein.</p>
@@ -745,6 +809,7 @@
                 <p>3. Pro mode mein samay ka dhyan rakhein. Pratyek level ke liye samay seemit hai!</p>
                 <p>4. Line kheenchkar tiles ko tircha, aada ya seedha milaya ja sakta hai.</p>
                 <p>5. Level badhane ke liye Target Score poora karein.</p>
+                <p>6. Dosto ko refer karein aur 10 coin bonus payein!</p>
             </div>
         </div>
     </div>
@@ -766,10 +831,10 @@
     <div class="side-menu" id="sidebar-menu">
         <h3>Game Panel</h3>
         <button class="side-menu-btn" onclick="openProfileModal()">👤 Profile</button>
-        <button class="side-menu-btn" onclick="alert('Link copied to clipboard! Aap dosto ko share karein.')">🔗 Share Button</button>
-        <button class="side-menu-btn" onclick="alert('Rules: Ek jese numbers ko merge karke bada number banayein. Time limit me score complete karein.')">📜 Game Rules</button>
-        <button class="side-menu-btn" onclick="alert('Support: Aap hume help@mergegame.com par mail kar sakte hain.')">📞 Help and Support</button>
-        <button class="side-menu-btn" onclick="alert('T&C: Yeh game sirf manoranjan ke liye hai. Data aapke device pe save hota hai.')">📋 Term and Conditions</button>
+        <button class="side-menu-btn" onclick="handleShareLink()">🔗 Share Button</button>
+        <button class="side-menu-btn" onclick="openGameRules()">📜 Game Rules</button>
+        <button class="side-menu-btn" onclick="openWhatsAppHelp()">📞 Help and Support</button>
+        <button class="side-menu-btn" onclick="openTermConditions()">📋 Term and Conditions</button>
         <button class="close-menu-btn" onclick="toggleSidebar(false)">Close Menu</button>
     </div>
 
@@ -791,6 +856,10 @@
             <div class="input-group">
                 <label style="color: #ffcc00;">Mobile Number</label>
                 <input type="tel" id="prof-mobile" placeholder="Naya Mobile Number" readonly>
+            </div>
+            <div class="input-group">
+                <label style="color: #ffcc00;">Your Refer Code</label>
+                <input type="text" id="prof-refer" style="background:#1a3344; color:#fff" readonly>
             </div>
             <div class="input-group">
                 <label style="color: #ffcc00;">Password</label>
@@ -817,6 +886,10 @@
             <div class="input-group">
                 <label style="color: #ffcc00;">Mobile Number</label>
                 <input type="tel" id="signup-mobile" placeholder="Mobile number dalein">
+            </div>
+            <div class="input-group">
+                <label style="color: #ffcc00;">Refer Code (Optional)</label>
+                <input type="tel" id="signup-refer" placeholder="Dost ka number (Bonus ke liye)">
             </div>
             <div class="input-group">
                 <label style="color: #ffcc00;">Password</label>
@@ -853,7 +926,7 @@
         <div class="mode-container" style="text-align: center;">
             <h2 style="color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Select Game Mode</h2>
             <button class="mode-btn normal-btn" style="background: #2ecc71;" onclick="startGameMode('normal')">Normal Play</button>
-            <button class="mode-btn pro-btn" style="background: #e67e22;" onclick="startGameMode('pro')">Pro Play</button>
+            <button class="mode-btn pro-btn" style="background: #e67e22;" onclick="openRoomDashboard()">Pro Play (Coins)</button>
 
             <div class="highscore-title">🏆 Normal Mode Top Scores 🏆</div>
             <div class="highscore-row">
@@ -882,10 +955,38 @@
         </div>
     </div>
 
+    <div id="room-overlay">
+        <div class="wallet-display">💰 My Wallet: <span id="wallet-coins">0</span> Coins</div>
+        
+        <div class="auth-card" style="max-width: 100%; width: 100%; margin-bottom: 20px;">
+            <h3 style="color: #ffcc00; margin: 0 0 10px 0;">Create New Room</h3>
+            <div class="input-group">
+                <label style="color:#ffcc00; font-size:12px;">Custom Entry Fee (Coins)</label>
+                <input type="number" id="room-entry-fee" placeholder="Ex: 10, 50, 100" min="1">
+            </div>
+            <div class="input-group">
+                <label style="color:#ffcc00; font-size:12px;">Players Count</label>
+                <select id="room-players">
+                    <option value="2">2 Players Slot</option>
+                    <option value="3">3 Players Slot</option>
+                    <option value="5">5 Players Slot</option>
+                    <option value="10">10 Players Slot</option>
+                </select>
+            </div>
+            <button class="auth-btn" onclick="handleCreateRoom()" style="font-size: 14px;">Create & Play</button>
+        </div>
+
+        <h3 style="color: #ffcc00; border-bottom: 1px solid #333; padding-bottom: 5px;">Active Rooms</h3>
+        <div id="active-rooms-list">
+            </div>
+
+        <button onclick="document.getElementById('room-overlay').style.display='none'" style="margin-top: 20px; padding: 10px; background: #555; color: white; border: none; border-radius: 5px; width: 100%;">Close Dashboard</button>
+    </div>
+
     <div id="game-over-overlay">
         <h2>GAME OVER</h2>
         <p id="game-over-msg">Aapka samay samapt ho gaya!</p>
-        <button onclick="resetGame()" style="background-color: #2ecc71; margin-bottom: 10px; width: 200px; padding: 15px; border-radius: 10px;">Dobara Khele</button>
+        <button id="restart-btn" onclick="resetGame()" style="background-color: #2ecc71; margin-bottom: 10px; width: 200px; padding: 15px; border-radius: 10px;">Dobara Khele</button>
         <button onclick="backToMenuFromGameOver()" style="background-color: #7f8c8d; width: 200px; padding: 15px; border-radius: 10px;">Back</button>
     </div>
 
@@ -917,7 +1018,7 @@
     </div>
 
     <div class="controls">
-        <button onclick="resetGame()">Naya Game</button>
+        <button id="new-game-btn" onclick="resetGame()">Naya Game</button>
         <div class="instructions">Mobile me <b>Ungli se swipe</b> karein aur computer me <b>Arrow keys</b> dabayein!</div>
     </div>
 
@@ -928,7 +1029,7 @@
         const drawingLine = document.getElementById('drawing-line');
         const timerDisplay = document.getElementById('timer');
         const levelDisplay = document.getElementById('level');
-        const targetDisplay = document.getElementById('target-score'); // New Reference
+        const targetDisplay = document.getElementById('target-score'); 
         const gameOverOverlay = document.getElementById('game-over-overlay');
         const gameOverMsg = document.getElementById('game-over-msg');
         const levelUpPopup = document.getElementById('level-up-popup');
@@ -938,13 +1039,9 @@
         const size = 6;
         let squares = [];
         
-        /* --------------------------------------------------- */
-        /* NEW LEVEL SYSTEM VARIABLES (Replaced Old Ones)      */
-        /* --------------------------------------------------- */
         let score = 0;
         let level = 1;
-        let nextLevelScore = 100; // Starting target for Level 2
-        /* --------------------------------------------------- */
+        let nextLevelScore = 100; 
 
         let timeLeft = 60;
         let timerId = null;
@@ -952,6 +1049,7 @@
         let isSoundOn = true;
         let audioCtx = null;
 
+        // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyAiAswwCTT03ENPO-oLr3dyac_zuwnUsMY",
             authDomain: "math-merge-fa42c.firebaseapp.com",
@@ -966,13 +1064,198 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        let gameMode = 'pro'; 
+        let gameMode = 'normal'; 
         let currentUserMobile = null;
+        let userCoins = 0;
+        let activeRoomId = null; // Track current room being played
+
         let normalHighScores = [
             {score: 0, name: "-", mobile: "****"},
             {score: 0, name: "-", mobile: "****"},
             {score: 0, name: "-", mobile: "****"}
         ];
+
+        // ---------------------------------------------------
+        // WALLET & ROOM LOGIC (NEW FUNCTIONS)
+        // ---------------------------------------------------
+
+        function openRoomDashboard() {
+            document.getElementById('room-overlay').style.display = 'flex';
+            fetchUserData();
+            fetchActiveRooms();
+        }
+
+        function fetchUserData() {
+            if(!currentUserMobile) return;
+            // Performance: Using on value for coins but limiting updates
+            database.ref('users/' + currentUserMobile).on('value', (snap) => {
+                const data = snap.val();
+                if(data) {
+                    userCoins = data.coins || 0;
+                    document.getElementById('wallet-coins').innerText = userCoins;
+                    document.getElementById('dash-coins').innerText = userCoins;
+                    document.getElementById('dash-refercode').innerText = data.mobile;
+                    document.getElementById('prof-refer').value = data.mobile;
+                }
+            });
+        }
+
+        function fetchActiveRooms() {
+            // Only fetching active rooms to save bandwidth
+            database.ref('rooms').orderByChild('status').equalTo('active').on('value', (snap) => {
+                const rooms = snap.val();
+                const listDiv = document.getElementById('active-rooms-list');
+                listDiv.innerHTML = '';
+                if(!rooms) { listDiv.innerHTML = '<p style="color:#777">No active rooms found.</p>'; return; }
+
+                Object.keys(rooms).forEach(id => {
+                    const room = rooms[id];
+                    const playedCount = room.scores ? Object.keys(room.scores).length : 0;
+                    const hasPlayed = room.scores && room.scores[currentUserMobile];
+                    const totalPrize = (room.entryFee * room.maxPlayers) * 0.8;
+
+                    const card = document.createElement('div');
+                    card.className = 'room-card';
+                    card.innerHTML = `
+                        <div class="room-info">
+                            <h4>Room #${id.slice(-5)}</h4>
+                            <p>Fee: ${room.entryFee} | Slots: ${playedCount}/${room.maxPlayers}</p>
+                            <p style="color:#2ecc71">Winner Gets: ${totalPrize.toFixed(0)} Coins</p>
+                        </div>
+                        <button class="auth-btn" style="width:auto; padding:5px 15px; margin:0;" 
+                            onclick="joinRoom('${id}')" ${hasPlayed ? 'disabled' : ''}>
+                            ${hasPlayed ? 'Played' : 'Join'}
+                        </button>
+                    `;
+                    listDiv.appendChild(card);
+                });
+            });
+        }
+
+        function handleCreateRoom() {
+            const feeInput = document.getElementById('room-entry-fee').value;
+            const fee = parseInt(feeInput);
+            const players = parseInt(document.getElementById('room-players').value);
+
+            if(!fee || fee <= 0) { alert("Sahi Entry Fee dalein!"); return; }
+
+            if(userCoins < fee) {
+                alert("Insufficient Coins! Please add more coins to your wallet.");
+                return;
+            }
+
+            const roomId = 'ROOM_' + Date.now();
+            const roomData = {
+                id: roomId,
+                creator: currentUserMobile,
+                entryFee: fee,
+                maxPlayers: players,
+                status: 'active',
+                createdAt: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            database.ref('users/' + currentUserMobile + '/coins').set(userCoins - fee).then(() => {
+                database.ref('rooms/' + roomId).set(roomData).then(() => {
+                    activeRoomId = roomId;
+                    startGameMode('pro');
+                    document.getElementById('room-overlay').style.display = 'none';
+                    alert("Room Created! Your score will be saved automatically.");
+                });
+            });
+        }
+
+        function joinRoom(roomId) {
+            database.ref('rooms/' + roomId).once('value').then(snap => {
+                const room = snap.val();
+                if(userCoins < room.entryFee) { alert("Insufficient Coins!"); return; }
+                
+                database.ref('users/' + currentUserMobile + '/coins').set(userCoins - room.entryFee).then(() => {
+                    activeRoomId = roomId;
+                    startGameMode('pro');
+                    document.getElementById('room-overlay').style.display = 'none';
+                });
+            });
+        }
+
+        function saveProScore() {
+            if(!activeRoomId || !currentUserMobile) return;
+
+            database.ref('rooms/' + activeRoomId).once('value').then(snap => {
+                const room = snap.val();
+                const userScoreData = {
+                    score: score,
+                    name: document.getElementById('dash-username').innerText || "Player",
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                };
+
+                database.ref('rooms/' + activeRoomId + '/scores/' + currentUserMobile).set(userScoreData).then(() => {
+                    checkRoomCompletion(activeRoomId);
+                });
+            });
+        }
+
+        function checkRoomCompletion(roomId) {
+            database.ref('rooms/' + roomId).once('value').then(snap => {
+                const room = snap.val();
+                const scores = room.scores || {};
+                const playedCount = Object.keys(scores).length;
+
+                if(playedCount >= room.maxPlayers) {
+                    // Decide Winner
+                    let winnerMobile = null;
+                    let highScore = -1;
+
+                    Object.keys(scores).forEach(mob => {
+                        if(scores[mob].score > highScore) {
+                            highScore = scores[mob].score;
+                            winnerMobile = mob;
+                        }
+                    });
+
+                    const totalPool = room.entryFee * room.maxPlayers;
+                    const winningAmount = Math.floor(totalPool * 0.8);
+
+                    // Add to winner's wallet
+                    database.ref('users/' + winnerMobile + '/coins').transaction(current => (current || 0) + winningAmount);
+                    
+                    // Add to Win History
+                    database.ref('users/' + winnerMobile + '/winHistory').push({
+                        roomId: roomId,
+                        amount: winningAmount,
+                        score: highScore,
+                        date: new Date().toLocaleDateString()
+                    });
+
+                    // Set status to closed
+                    database.ref('rooms/' + roomId + '/status').set('completed');
+                    database.ref('rooms/' + roomId + '/winner').set(winnerMobile);
+                }
+            });
+        }
+
+        function openWinHistory() {
+            toggleLeftSidebar(false);
+            const historyList = document.getElementById('win-history-list');
+            historyList.innerHTML = 'Loading...';
+            
+            database.ref('users/' + currentUserMobile + '/winHistory').once('value').then(snap => {
+                historyList.innerHTML = '';
+                const history = snap.val();
+                if(!history) { historyList.innerHTML = 'No wins yet. Keep playing!'; return; }
+
+                Object.values(history).reverse().forEach(win => {
+                    const div = document.createElement('div');
+                    div.className = 'win-history-item';
+                    div.innerHTML = `🏆 Won <b>${win.amount} Coins</b><br><small>Score: ${win.score} | Date: ${win.date}</small>`;
+                    historyList.appendChild(div);
+                });
+                document.getElementById('history-modal').style.display = 'flex';
+            });
+        }
+
+        // ---------------------------------------------------
+        // EXISTING GAME FUNCTIONS (MODIFIED)
+        // ---------------------------------------------------
 
         function togglePassVisibility(id) {
             const input = document.getElementById(id);
@@ -993,20 +1276,43 @@
         function handleSignup() {
             const name = document.getElementById('signup-name').value.trim();
             const mobile = document.getElementById('signup-mobile').value.trim();
+            const refer = document.getElementById('signup-refer').value.trim();
             const pass = document.getElementById('signup-pass').value.trim();
+            
             if (!name || !mobile || !pass) { alert("Kripya sari details bharein!"); return; }
+
             database.ref('users/' + mobile).once('value').then((snapshot) => {
                 if (snapshot.exists()) alert("Yeh mobile number pehle se registered hai!");
                 else {
-                    const now = new Date();
-                    const registrationDate = now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
-                    database.ref('users/' + mobile).set({
-                        name: name, mobile: mobile, pass: pass,
-                        profilePic: "https://cdn-icons-png.flaticon.com/512/149/149071.png",
-                        registrationDate: registrationDate,
-                        lastLevel: 1 
-                    }).then(() => { alert("Signup safal raha! Ab login karein."); switchAuth('login'); });
+                    let initialCoins = 10;
+                    if(refer) {
+                        // Check if refer code exists
+                        database.ref('users/' + refer).once('value').then(refSnap => {
+                            if(refSnap.exists()) {
+                                initialCoins = 20;
+                                // Reward the referer with 10 coins
+                                database.ref('users/' + refer + '/coins').transaction(c => (c || 0) + 10);
+                                finalizeSignup(name, mobile, pass, initialCoins, "Signup safal! Valid refer code ki wajah se 20 Coins mile hain.");
+                            } else {
+                                finalizeSignup(name, mobile, pass, 10, "Refer code galat hai, par signup ho gaya! 10 Coins mile hain.");
+                            }
+                        });
+                    } else {
+                        finalizeSignup(name, mobile, pass, initialCoins, "Signup safal! 10 Coins Bonus mile hain. Ab login karein.");
+                    }
                 }
+            });
+        }
+
+        function finalizeSignup(name, mobile, pass, coins, msg) {
+            database.ref('users/' + mobile).set({
+                name: name, mobile: mobile, pass: pass,
+                profilePic: "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+                coins: coins,
+                lastLevel: 1 
+            }).then(() => { 
+                alert(msg); 
+                switchAuth('login'); 
             });
         }
 
@@ -1022,6 +1328,7 @@
                         localStorage.setItem('currentUserMobile', mobile);
                         document.getElementById('auth-overlay').style.display = 'none';
                         document.getElementById('mode-overlay').style.display = 'flex';
+                        fetchUserData();
                         fetchGlobalScores(); 
                     } else alert("Galat Password!");
                 } else alert("Yeh mobile number registered nahi hai!");
@@ -1048,6 +1355,11 @@
 
         function checkAndSaveHighScore() {
             if (!currentUserMobile) return;
+            
+            if(gameMode === 'pro') {
+                saveProScore();
+            }
+
             database.ref('users/' + currentUserMobile).once('value').then((snapshot) => {
                 const activeUser = snapshot.val() || {};
                 const userName = activeUser.name || "Unknown";
@@ -1067,9 +1379,6 @@
                     lastLevel: level,
                     lastScore: score
                 });
-                
-                localStorage.setItem('saved_level', level);
-                localStorage.setItem('saved_score', score);
             });
         }
 
@@ -1080,8 +1389,19 @@
             resetGame();
         }
 
-        function backToMenu() { clearInterval(timerId); checkAndSaveHighScore(); document.getElementById('mode-overlay').style.display = 'flex'; }
-        function backToMenuFromGameOver() { gameOverOverlay.style.display = 'none'; document.getElementById('mode-overlay').style.display = 'flex'; }
+        function backToMenu() { 
+            clearInterval(timerId); 
+            checkAndSaveHighScore(); 
+            activeRoomId = null; 
+            document.getElementById('mode-overlay').style.display = 'flex'; 
+        }
+
+        function backToMenuFromGameOver() { 
+            gameOverOverlay.style.display = 'none'; 
+            activeRoomId = null;
+            document.getElementById('mode-overlay').style.display = 'flex'; 
+        }
+
         function toggleSidebar(show) { const sidebar = document.getElementById('sidebar-menu'); if (show) sidebar.classList.add('active'); else sidebar.classList.remove('active'); }
         
         function openProfileModal() {
@@ -1093,6 +1413,7 @@
                     document.getElementById('prof-name').value = user.name;
                     document.getElementById('prof-mobile').value = user.mobile;
                     document.getElementById('prof-pass').value = user.pass;
+                    document.getElementById('prof-refer').value = user.mobile;
                     document.getElementById('profile-img').src = user.profilePic || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
                     document.getElementById('profile-modal').style.display = 'flex';
                 }
@@ -1112,7 +1433,24 @@
 
         function toggleLeftSidebar(show) { const sidebar = document.getElementById('left-sidebar-menu'); if (show) sidebar.classList.add('active'); else sidebar.classList.remove('active'); }
         function openProfileModalFromSidebar() { toggleLeftSidebar(false); openProfileModal(); }
-        function handleShareLink() { const link = "https://imran13144.github.io/Tic-Tac-Toe-Dawnload/"; navigator.clipboard.writeText(link).then(() => alert('Link copied!')); }
+        
+        function handleShareLink() { 
+            const link = "https://imran13144.github.io/Tic-Tac-Toe-Dawnload/"; 
+            const msg = `Hey! Join me on Merge Math Game. Mere saath khele aur coins jeetein. Mera Refer Code hai: ${currentUserMobile}. Game Link: ${link}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Math Merge Game',
+                    text: msg,
+                    url: link,
+                }).catch(err => {
+                    navigator.clipboard.writeText(msg).then(() => alert('Share message copied!'));
+                });
+            } else {
+                navigator.clipboard.writeText(msg).then(() => alert('Share message copied! Dosto ko bhej kar refer bonus payein.'));
+            }
+        }
+
         function openGameRules() { document.getElementById('rules-modal').style.display = 'flex'; }
         function openTermConditions() { document.getElementById('terms-modal').style.display = 'flex'; }
         function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
@@ -1124,16 +1462,16 @@
         
         function openMathMergeDashboard() {
             toggleLeftSidebar(false);
-            document.getElementById('dash-score').innerHTML = score;
-            document.getElementById('dash-level').innerHTML = level;
-            document.getElementById('dash-mode').innerHTML = gameMode.toUpperCase();
             database.ref('users/' + currentUserMobile).once('value').then((snapshot) => {
                 if (snapshot.exists()) {
                     const user = snapshot.val();
                     document.getElementById('dash-username').innerHTML = user.name;
                     document.getElementById('dash-mobile').innerHTML = user.mobile;
-                    const displayLevel = Math.max(level, user.lastLevel || 1);
-                    document.getElementById('dash-level').innerHTML = displayLevel;
+                    document.getElementById('dash-refercode').innerHTML = user.mobile;
+                    document.getElementById('dash-score').innerHTML = score;
+                    document.getElementById('dash-level').innerHTML = level;
+                    document.getElementById('dash-mode').innerHTML = gameMode.toUpperCase();
+                    document.getElementById('dash-coins').innerHTML = user.coins || 0;
                 }
                 document.getElementById('dashboard-modal').style.display = 'flex';
             });
@@ -1168,18 +1506,19 @@
             const svgLayer = document.getElementById('swipe-canvas');
             gridDisplay.innerHTML = ''; gridDisplay.appendChild(svgLayer);
             squares = [];
+            const fragment = document.createDocumentFragment(); // Performance: Fragment for faster DOM insertion
             for (let i = 0; i < size * size; i++) {
                 let cell = document.createElement('div'); cell.classList.add('cell');
                 let randomVal = getNewTileValue(); cell.innerHTML = randomVal; cell.classList.add('n' + randomVal);
-                gridDisplay.appendChild(cell); squares.push(cell);
+                fragment.appendChild(cell); squares.push(cell);
             }
+            gridDisplay.appendChild(fragment);
         }
 
         function getNewTileValue() {
             let val; let attempts = 0;
             while (attempts < 50) {
                 val = Math.floor(Math.random() * 5) + 1;
-                // Block certain numbers based on level
                 if (level >= 10 && val === 9) { attempts++; continue; }
                 if (level >= 9 && val === 8) { attempts++; continue; }
                 if (level >= 8 && val === 7) { attempts++; continue; }
@@ -1210,16 +1549,8 @@
         function removeBlockedTilesFromBoard() {
             for (let i = 0; i < squares.length; i++) {
                 let currentVal = parseInt(squares[i].innerHTML); let isBlocked = false;
-                if (level >= 10 && currentVal === 9) isBlocked = true;
-                if (level >= 9 && currentVal === 8) isBlocked = true;
-                if (level >= 8 && currentVal === 7) isBlocked = true;
-                if (level >= 7 && currentVal === 6) isBlocked = true;
-                if (level >= 6 && currentVal === 5) isBlocked = true;
-                if (level >= 5 && currentVal === 4) isBlocked = true;
-                if (level >= 4 && currentVal === 3) isBlocked = true;
-                if (level >= 3 && currentVal === 2) isBlocked = true;
                 if (level >= 2 && currentVal === 1) isBlocked = true;
-                if (isBlocked) { squares[i].innerHTML = getNewTileValue(); squares[i].style.transform = 'scale(0.2)'; setTimeout(() => squares[i].style.transform = 'scale(1)', 50); }
+                if (isBlocked) { squares[i].innerHTML = getNewTileValue(); }
             }
             updateStyles();
         }
@@ -1229,35 +1560,17 @@
             levelBox.classList.add('level-scroll-anim'); setTimeout(() => levelBox.classList.remove('level-scroll-anim'), 1000);
             levelUpPopup.style.display = 'block'; setTimeout(() => levelUpPopup.classList.add('active'), 10);
             setTimeout(() => { levelUpPopup.classList.remove('active'); setTimeout(() => levelUpPopup.style.display = 'none', 500); }, 1500);
-            
-            if(currentUserMobile) {
-                database.ref('users/' + currentUserMobile).update({ lastLevel: level });
-            }
-        }
-
-        /* --------------------------------------------------- */
-        /* NEW LEVEL PROGRESSION SYSTEM (Core Functions)       */
-        /* --------------------------------------------------- */
-        
-        function calculateNextLevelScore(currentLvl, prevTarget) {
-            // Formula: Next Score = (Previous Target × 1.4) + (Level × 10)
-            let rawNext = (prevTarget * 1.4) + (currentLvl * 10);
-            return Math.floor(rawNext);
         }
 
         function checkLevelUp() {
             if (score >= nextLevelScore) {
-                // Perform Level Up
                 level++;
                 let previousTarget = nextLevelScore;
-                nextLevelScore = calculateNextLevelScore(level, previousTarget);
-                
+                nextLevelScore = Math.floor((previousTarget * 1.4) + (level * 10));
                 updateLevelUI();
                 resetTimerForCurrentLevel(); 
                 showLevelUpPopup(); 
                 removeBlockedTilesFromBoard(); 
-                
-                // Recursively check in case score is very high
                 checkLevelUp();
             }
         }
@@ -1268,150 +1581,100 @@
             scoreDisplay.innerHTML = score;
         }
 
-        /* --------------------------------------------------- */
+        function triggerGameOver(reason) { 
+            isGameOver = true; 
+            clearInterval(timerId); 
+            checkAndSaveHighScore(); 
+            gameOverMsg.innerHTML = (reason === "timeout") ? "Aapka samay samapt ho gaya!" : "Koi move baki nahi hai!"; 
+            gameOverOverlay.style.display = 'flex'; 
+        }
 
-        function triggerGameOver(reason) { isGameOver = true; clearInterval(timerId); checkAndSaveHighScore(); gameOverMsg.innerHTML = (reason === "timeout") ? "Aapka samay samapt ho gaya!" : "Koi move baki nahi hai!"; gameOverOverlay.style.display = 'flex'; }
+        function updateStyles() { 
+            for (let i = 0; i < squares.length; i++) { 
+                let val = squares[i].innerHTML;
+                let classes = ['cell'];
+                if (val !== '' && val !== '0') classes.push('n' + val);
+                if (squares[i].classList.contains('pop-effect')) classes.push('pop-effect');
+                squares[i].className = classes.join(' '); 
+            } 
+        }
 
-        function moveLeft() { let moved = false; for (let i = 0; i < size * size; i++) { if (i % size === 0) { let row = []; for (let j = 0; j < size; j++) row.push(parseInt(squares[i+j].innerHTML) || 0); let original = row.join(','); let filtered = row.filter(n => n); let newRow = filtered.concat(Array(size - filtered.length).fill('')); for (let j = 0; j < size; j++) squares[i+j].innerHTML = newRow[j]; if(original !== newRow.join(',')) moved = true; } } return moved; }
-        function moveRight() { let moved = false; for (let i = 0; i < size * size; i++) { if (i % size === 0) { let row = []; for (let j = 0; j < size; j++) row.push(parseInt(squares[i+j].innerHTML) || 0); let original = row.join(','); let filtered = row.filter(n => n); let newRow = Array(size - filtered.length).fill('').concat(filtered); for (let j = 0; j < size; j++) squares[i+j].innerHTML = newRow[j]; if(original !== newRow.join(',')) moved = true; } } return moved; }
-        function moveDown() { let moved = false; for (let i = 0; i < size; i++) { let col = []; for (let j = 0; j < size; j++) col.push(parseInt(squares[i+(j*size)].innerHTML) || 0); let original = col.join(','); let filtered = col.filter(n => n); let newCol = Array(size - filtered.length).fill('').concat(filtered); for (let j = 0; j < size; j++) squares[i+(j*size)].innerHTML = newCol[j]; if(original !== newCol.join(',')) moved = true; } return moved; }
-        function moveUp() { let moved = false; for (let i = 0; i < size; i++) { let col = []; for (let j = 0; j < size; j++) col.push(parseInt(squares[i+(j*size)].innerHTML) || 0); let original = col.join(','); let filtered = col.filter(n => n); let newCol = filtered.concat(Array(size - filtered.length).fill('')); for (let j = 0; j < size; j++) squares[i+(j*size)].innerHTML = newCol[j]; if(original !== newCol.join(',')) moved = true; } return moved; }
-
-        function combineRow() { for (let i = 0; i < (size * size) - 1; i++) { if ((i+1) % size !== 0 && squares[i].innerHTML === squares[i+1].innerHTML && squares[i].innerHTML !== '') { let total = parseInt(squares[i].innerHTML) + parseInt(squares[i+1].innerHTML); squares[i].innerHTML = total; squares[i+1].innerHTML = ''; score += total; checkLevelUp(); updateLevelUI(); triggerPopEffect(squares[i]); } } updateStyles(); }
-        function combineColumn() { for (let i = 0; i < size * (size - 1); i++) { if (squares[i].innerHTML === squares[i+size].innerHTML && squares[i].innerHTML !== '') { let total = parseInt(squares[i].innerHTML) + parseInt(squares[i+size].innerHTML); squares[i].innerHTML = total; squares[i+size].innerHTML = ''; score += total; checkLevelUp(); updateLevelUI(); triggerPopEffect(squares[i]); } } updateStyles(); }
-        
         function triggerPopEffect(element) { const existing = document.querySelector('.pop-effect'); if (existing) existing.classList.remove('pop-effect'); element.classList.add('pop-effect'); }
-
-        function updateStyles() { for (let i = 0; i < squares.length; i++) { let glow = squares[i].classList.contains('pop-effect'); squares[i].className = 'cell'; let val = squares[i].innerHTML; if (val !== '' && val !== '0') squares[i].classList.add('n' + val); if(glow) squares[i].classList.add('pop-effect'); } }
-
-        function control(e) { if (isGameOver) return; let acted = false; if (e.keyCode === 37) { moveLeft(); combineRow(); moveLeft(); acted = true; } else if (e.keyCode === 38) { moveUp(); combineColumn(); moveUp(); acted = true; } else if (e.keyCode === 39) { moveRight(); combineRow(); moveRight(); acted = true; } else if (e.keyCode === 40) { moveDown(); combineColumn(); moveDown(); acted = true; } if(acted) { resetTimerForCurrentLevel(); setTimeout(() => { refillGrid(); if (gameMode === 'normal') checkAvailableMoves(); }, 100); } }
-        document.addEventListener('keyup', control);
 
         let selectedPath = []; let isSwiping = false; let currentValue = null;
         
         function getCellIndexFromPoint(x, y) { 
             const rect = gridDisplay.getBoundingClientRect(); 
-            if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return null; 
-            const cellW = rect.width / size;
-            const cellH = rect.height / size;
-            const col = Math.floor((x - rect.left) / cellW); 
-            const row = Math.floor((y - rect.top) / cellH); 
+            const cellW = rect.width / size; const cellH = rect.height / size;
+            const col = Math.floor((x - rect.left) / cellW); const row = Math.floor((y - rect.top) / cellH); 
             if (col >= 0 && col < size && row >= 0 && row < size) return row * size + col; 
             return null; 
         }
         
-        function updateSwipeLine() { 
-            if (selectedPath.length < 1) { drawingLine.style.opacity = '0'; return; } 
-            drawingLine.style.opacity = '1'; 
-            const rect = gridDisplay.getBoundingClientRect(); 
-            let d = ''; 
-            selectedPath.forEach((idx, i) => { 
-                const cRect = squares[idx].getBoundingClientRect(); 
-                const cx = (cRect.left - rect.left) + (cRect.width / 2); 
-                const cy = (cRect.top - rect.top) + (cRect.height / 2); 
-                if (i === 0) d += `M ${cx} ${cy}`; else d += ` L ${cx} ${cy}`; 
-            }); 
-            drawingLine.setAttribute('d', d); 
-        }
-
         function handleSwipeMove(clientX, clientY) {
             if (!isSwiping || isGameOver) return;
             const idx = getCellIndexFromPoint(clientX, clientY);
             if (idx !== null) {
                 const val = squares[idx].innerHTML;
                 if (val !== '' && val !== '0') {
-                    if (selectedPath.length === 0) { 
-                        currentValue = val; 
-                        selectedPath.push(idx); 
-                        squares[idx].classList.add('selected-cell'); 
-                        playSwipeSoundLoud(); 
-                    }
-                    else if (selectedPath.length >= 2 && idx === selectedPath[selectedPath.length - 2]) { 
-                        let rem = selectedPath.pop(); 
-                        squares[rem].classList.remove('selected-cell'); 
-                        playSwipeSoundLoud(); 
-                    }
+                    if (selectedPath.length === 0) { currentValue = val; selectedPath.push(idx); squares[idx].classList.add('selected-cell'); playSwipeSoundLoud(); }
+                    else if (selectedPath.length >= 2 && idx === selectedPath[selectedPath.length - 2]) { let rem = selectedPath.pop(); squares[rem].classList.remove('selected-cell'); }
                     else if (val === currentValue && !selectedPath.includes(idx)) {
                         const last = selectedPath[selectedPath.length - 1];
-                        const r1 = Math.floor(last/size), c1 = last%size;
-                        const r2 = Math.floor(idx/size), c2 = idx%size;
-                        if (Math.abs(r1 - r2) <= 1 && Math.abs(c1 - c2) <= 1) { 
-                            selectedPath.push(idx); 
-                            squares[idx].classList.add('selected-cell'); 
-                            playSwipeSoundLoud(); 
-                        }
+                        const r1 = Math.floor(last/size), c1 = last%size, r2 = Math.floor(idx/size), c2 = idx%size;
+                        if (Math.abs(r1 - r2) <= 1 && Math.abs(c1 - c2) <= 1) { selectedPath.push(idx); squares[idx].classList.add('selected-cell'); playSwipeSoundLoud(); }
                     }
                     updateSwipeLine();
                 }
             }
         }
 
+        function updateSwipeLine() {
+            if (selectedPath.length < 1) { drawingLine.style.opacity = '0'; return; }
+            drawingLine.style.opacity = '1';
+            const rect = gridDisplay.getBoundingClientRect();
+            let d = '';
+            selectedPath.forEach((idx, i) => {
+                const cRect = squares[idx].getBoundingClientRect();
+                const cx = (cRect.left - rect.left) + (cRect.width / 2);
+                const cy = (cRect.top - rect.top) + (cRect.height / 2);
+                if (i === 0) d += `M ${cx} ${cy}`; else d += ` L ${cx} ${cy}`;
+            });
+            drawingLine.setAttribute('d', d);
+        }
+
         function endSwipe() {
             if (!isSwiping || isGameOver) return; 
             isSwiping = false; 
-            drawingLine.style.opacity = '0'; 
-            drawingLine.setAttribute('d', '');
+            drawingLine.style.opacity = '0';
             selectedPath.forEach(idx => squares[idx].classList.remove('selected-cell'));
             if (selectedPath.length >= 2) {
                 let total = 0; let lastIdx = selectedPath[selectedPath.length - 1];
-                selectedPath.forEach(idx => { 
-                    total += parseInt(squares[idx].innerHTML); 
-                    squares[idx].innerHTML = ''; 
-                });
-                squares[lastIdx].innerHTML = total; 
-                score += total; 
-                
-                checkLevelUp(); // Check for progression
-                updateLevelUI(); // Refresh UI
-                
-                triggerPopEffect(squares[lastIdx]); 
-                playJoinSoundLoud(); 
-                resetTimerForCurrentLevel();
-                setTimeout(() => { refillGrid(); if (gameMode === 'normal') checkAvailableMoves(); }, 150);
+                selectedPath.forEach(idx => { total += parseInt(squares[idx].innerHTML); squares[idx].innerHTML = ''; });
+                squares[lastIdx].innerHTML = total; score += total; 
+                checkLevelUp(); updateLevelUI(); triggerPopEffect(squares[lastIdx]); playJoinSoundLoud(); resetTimerForCurrentLevel();
+                setTimeout(refillGrid, 100); // Faster refill
             }
             selectedPath = []; currentValue = null; updateStyles();
         }
 
-        function checkAvailableMoves() {
-            for (let i = 0; i < squares.length; i++) if (squares[i].innerHTML === '' || squares[i].innerHTML === '0') return;
-            const dirs = [{r:0,c:1},{r:1,c:0},{r:1,c:1},{r:1,c:-1},{r:-1,c:0},{r:0,c:-1},{r:-1,c:-1},{r:-1,c:1}];
-            for (let i = 0; i < squares.length; i++) {
-                const val = squares[i].innerHTML; const r = Math.floor(i/size), c = i%size;
-                for (let d of dirs) { const nr = r+d.r, nc = c+d.c; if(nr>=0 && nr<size && nc>=0 && nc<size && squares[nr*size+nc].innerHTML === val) return; }
-            }
-            triggerGameOver("nomoves");
-        }
-
-        gridDisplay.addEventListener('touchstart', (e) => { 
-            isSwiping = true; 
-            handleSwipeMove(e.touches[0].clientX, e.touches[0].clientY); 
-            e.preventDefault(); 
-        }, {passive: false});
-        gridDisplay.addEventListener('touchmove', (e) => { 
-            handleSwipeMove(e.touches[0].clientX, e.touches[0].clientY); 
-            e.preventDefault(); 
-        }, {passive: false});
-        gridDisplay.addEventListener('touchend', endSwipe, false);
+        gridDisplay.addEventListener('touchstart', (e) => { isSwiping = true; handleSwipeMove(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }, {passive: false});
+        gridDisplay.addEventListener('touchmove', (e) => { handleSwipeMove(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }, {passive: false});
+        gridDisplay.addEventListener('touchend', endSwipe);
         gridDisplay.addEventListener('mousedown', (e) => { isSwiping = true; handleSwipeMove(e.clientX, e.clientY); });
         window.addEventListener('mousemove', (e) => { if(isSwiping) handleSwipeMove(e.clientX, e.clientY); });
         window.addEventListener('mouseup', endSwipe);
 
         function resetGame() { 
-            score = 0; 
-            level = 1; 
-            nextLevelScore = 100;
-            timeLeft = 60; 
-            isGameOver = false; 
-            updateLevelUI();
-            timerDisplay.innerHTML = 60; 
+            score = 0; level = 1; nextLevelScore = 100;
+            timeLeft = 60; isGameOver = false; 
+            updateLevelUI(); timerDisplay.innerHTML = 60; 
             gameOverOverlay.style.display = 'none'; 
             levelUpPopup.style.display = 'none'; 
             createBoard(); 
             startTimerSystem(); 
         }
         
-        createBoard();
-
         window.addEventListener('load', () => {
             const saved = localStorage.getItem('currentUserMobile');
             if (saved) { 
@@ -1420,11 +1683,14 @@
                         currentUserMobile = saved; 
                         document.getElementById('auth-overlay').style.display = 'none'; 
                         document.getElementById('mode-overlay').style.display = 'flex'; 
+                        fetchUserData();
                         fetchGlobalScores(); 
                     } 
                 }); 
             }
         });
+
+        createBoard();
     </script>
 </body>
 </html>
