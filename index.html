@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Merge Math Game</title>
     <style>
+        /* FIX CODE: Screen ko hilne se rokne ke liye overflow aur touch properties */
+        html, body {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+
         body {
             /* NAYA CODE: Background ko 3D Colorful aur Animated banaya gaya hai */
             background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
@@ -17,7 +25,6 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
-            overflow: hidden;
             user-select: none;
             /* 3D Depth ke liye halka sa inner shadow */
             box-shadow: inset 0 0 100px rgba(0,0,0,0.2);
@@ -358,14 +365,15 @@
 
         .auth-card {
             background: #0f1c24;
-            padding: 8%; /* px to % */
+            padding: 5% 8%; /* FIX: Padding kam ki screen fit ke liye */
             border-radius: 5px;
             border: 3px solid #b38f00;
             box-shadow: 0 0 25px rgba(255, 204, 0, 0.3), inset 0 0 15px rgba(0,0,0,0.8);
-            width: 80%; /* px to % */
+            width: 85%; /* px to % */
             max-width: 320px;
             text-align: center;
             position: relative;
+            box-sizing: border-box; /* Zaroori hai width manage karne ke liye */
         }
         
         .auth-card::before {
@@ -725,6 +733,43 @@
             margin-bottom: 5px;
             font-size: 13px;
         }
+
+        /* NAYA CODE: Rank Modal Styles */
+        #rank-modal .rank-entry {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #1a3344;
+            font-size: 14px;
+        }
+        #rank-modal .rank-header {
+            font-weight: bold;
+            color: #ffcc00;
+            border-bottom: 2px solid #b38f00;
+            margin-bottom: 5px;
+        }
+
+        /* NAYA CODE: Room History Modal Styles */
+        #room-history-modal .history-entry {
+            background: #0f1c24;
+            border: 1px solid #1a3344;
+            padding: 10px;
+            margin-bottom: 12px;
+            border-radius: 5px;
+            text-align: left;
+        }
+        .history-rank-box {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed #333;
+        }
+        .history-player {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #ccc;
+            margin-bottom: 2px;
+        }
     </style>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -749,6 +794,29 @@
             <span class="modal-close-btn" onclick="closeModal('history-modal')">&times;</span>
             <h2 style="color: #ffcc00;">Win History</h2>
             <div id="win-history-list" class="text-modal-content">
+                </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="rank-modal">
+        <div class="modal-card">
+            <span class="modal-close-btn" onclick="closeModal('rank-modal')">&times;</span>
+            <h2 style="color: #ffcc00;">Room Ranking</h2>
+            <div id="rank-list" class="text-modal-content">
+                <div class="rank-entry rank-header">
+                    <span>Player</span>
+                    <span>Score</span>
+                </div>
+                <div id="rank-data-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="room-history-modal">
+        <div class="modal-card">
+            <span class="modal-close-btn" onclick="closeModal('room-history-modal')">&times;</span>
+            <h2 style="color: #ffcc00;">Room History</h2>
+            <div id="room-history-list" class="text-modal-content">
                 </div>
         </div>
     </div>
@@ -804,7 +872,7 @@
                 <p>6. Refer a friend and get 10 coins bonus!</p>
                 
                 <h4>हिंदी में:</h4>
-                <p>1. समान numberon ko ek saath le jane aur jodne ke liye screen ko swipe karein.</p>
+                <p>1. saman numberon ko ek saath le jane aur jodne ke liye screen ko swipe karein.</p>
                 <p>2. Do saman numberon ko milane se ek bada number banta hai aur points milte hain.</p>
                 <p>3. Pro mode mein samay ka dhyan rakhein. Pratyek level ke liye samay seemit hai!</p>
                 <p>4. Line kheenchkar tiles ko tircha, aada ya seedha milaya ja sakta hai.</p>
@@ -976,8 +1044,12 @@
             <button class="auth-btn" onclick="handleCreateRoom()" style="font-size: 14px;">Create & Play</button>
         </div>
 
-        <h3 style="color: #ffcc00; border-bottom: 1px solid #333; padding-bottom: 5px;">Active Rooms</h3>
-        <div id="active-rooms-list">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 10px;">
+            <h3 style="color: #ffcc00; margin: 0;">Active Rooms</h3>
+            <button onclick="openRoomHistoryModal()" style="background: #3498db; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">History</button>
+        </div>
+        
+        <div id="active-rooms-list" style="margin-top: 10px;">
             </div>
 
         <button onclick="document.getElementById('room-overlay').style.display='none'" style="margin-top: 20px; padding: 10px; background: #555; color: white; border: none; border-radius: 5px; width: 100%;">Close Dashboard</button>
@@ -1002,7 +1074,7 @@
             <div class="stat-box" id="timer-box" style="background-color: #e67e22;">Time: <span id="timer">60</span>s</div>
             <div class="stat-box" id="level-box" style="background-color: #2ecc71;">Level: <span id="level">1</span></div>
             <button class="sound-btn" id="sound-toggle" onclick="toggleSound()">🔊 Sound: ON</button>
-            <button class="back-btn" id="back-to-menu" onclick="backToMenu()">⬅ Back</button>
+            <button class="back-btn" id="back-to-menu" onclick="confirmBackToMenu()">⬅ Back</button>
         </div>
     </div>
 
@@ -1122,13 +1194,87 @@
                             <p>Fee: ${room.entryFee} | Slots: ${playedCount}/${room.maxPlayers}</p>
                             <p style="color:#2ecc71">Winner Gets: ${totalPrize.toFixed(0)} Coins</p>
                         </div>
-                        <button class="auth-btn" style="width:auto; padding:5px 15px; margin:0;" 
-                            onclick="joinRoom('${id}')" ${hasPlayed ? 'disabled' : ''}>
-                            ${hasPlayed ? 'Played' : 'Join'}
-                        </button>
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                            <button class="auth-btn" style="width:auto; padding:5px 15px; margin:0; background:#3498db; font-size:12px;" 
+                                onclick="showRoomRankings('${id}')">
+                                Rank
+                            </button>
+                            <button class="auth-btn" style="width:auto; padding:5px 15px; margin:0;" 
+                                onclick="joinRoom('${id}')" ${hasPlayed ? 'disabled' : ''}>
+                                ${hasPlayed ? 'Played' : 'Join'}
+                            </button>
+                        </div>
                     `;
                     listDiv.appendChild(card);
                 });
+            });
+        }
+
+        // NAYA CODE: History Modal Open Function (Updated with Player Ranks)
+        function openRoomHistoryModal() {
+            const listDiv = document.getElementById('room-history-list');
+            listDiv.innerHTML = 'History load ho rahi hai...';
+            document.getElementById('room-history-modal').style.display = 'flex';
+
+            database.ref('rooms').orderByChild('status').equalTo('completed').limitToLast(15).once('value').then(snap => {
+                const rooms = snap.val();
+                listDiv.innerHTML = '';
+                if(!rooms) { listDiv.innerHTML = '<p>Koi history nahi mili.</p>'; return; }
+
+                Object.keys(rooms).reverse().forEach(id => {
+                    const room = rooms[id];
+                    const div = document.createElement('div');
+                    div.className = 'history-entry';
+                    
+                    // Create Rank List for History Entry
+                    let rankHtml = '';
+                    if(room.scores) {
+                        const sorted = Object.values(room.scores).sort((a,b) => b.score - a.score).slice(0, 3);
+                        sorted.forEach((p, index) => {
+                            rankHtml += `
+                                <div class="history-player">
+                                    <span>${index + 1}. ${p.name}</span>
+                                    <span>Score: ${p.score}</span>
+                                </div>
+                            `;
+                        });
+                    }
+
+                    div.innerHTML = `
+                        <div style="color:#ffcc00; font-weight:bold;">Room #${id.slice(-5)}</div>
+                        <div style="font-size:12px; margin:4px 0;">Final Winner: <span style="color:#2ecc71">${room.winnerName || "N/A"}</span></div>
+                        <div style="font-size:12px;">Prize Pool: ${room.entryFee * room.maxPlayers} Coins</div>
+                        <div class="history-rank-box">
+                            <div style="font-size:10px; color:#ffcc00; margin-bottom:4px; font-weight:bold;">TOP RANKERS:</div>
+                            ${rankHtml}
+                        </div>
+                    `;
+                    listDiv.appendChild(div);
+                });
+            });
+        }
+
+        // NAYA CODE: Rank dikhane ka function
+        function showRoomRankings(roomId) {
+            database.ref('rooms/' + roomId + '/scores').once('value').then(snap => {
+                const scores = snap.val();
+                const container = document.getElementById('rank-data-container');
+                container.innerHTML = '';
+                
+                if(!scores) {
+                    container.innerHTML = '<p style="padding:10px;">Abhi kisi ne nahi khela.</p>';
+                } else {
+                    // Convert to array and sort High to Low (Winner will be highest score)
+                    const sortedScores = Object.values(scores).sort((a, b) => b.score - a.score);
+                    sortedScores.forEach(entry => {
+                        const div = document.createElement('div');
+                        div.className = 'rank-entry';
+                        // FIXED: Displaying name and score
+                        div.innerHTML = `<span>${entry.name || "Unknown"}</span> <span>${entry.score}</span>`;
+                        container.appendChild(div);
+                    });
+                }
+                document.getElementById('rank-modal').style.display = 'flex';
             });
         }
 
@@ -1180,11 +1326,12 @@
         function saveProScore() {
             if(!activeRoomId || !currentUserMobile) return;
 
-            database.ref('rooms/' + activeRoomId).once('value').then(snap => {
-                const room = snap.val();
+            database.ref('users/' + currentUserMobile).once('value').then(userSnap => {
+                const userData = userSnap.val();
                 const userScoreData = {
                     score: score,
-                    name: document.getElementById('dash-username').innerText || "Player",
+                    name: userData.name || "Player",
+                    mobile: currentUserMobile,
                     timestamp: firebase.database.ServerValue.TIMESTAMP
                 };
 
@@ -1197,18 +1344,22 @@
         function checkRoomCompletion(roomId) {
             database.ref('rooms/' + roomId).once('value').then(snap => {
                 const room = snap.val();
+                if(!room || room.status !== 'active') return;
+
                 const scores = room.scores || {};
                 const playedCount = Object.keys(scores).length;
 
                 if(playedCount >= room.maxPlayers) {
-                    // Decide Winner
+                    // Decide Winner (Highest score wins)
                     let winnerMobile = null;
                     let highScore = -1;
+                    let winnerName = "";
 
                     Object.keys(scores).forEach(mob => {
                         if(scores[mob].score > highScore) {
                             highScore = scores[mob].score;
                             winnerMobile = mob;
+                            winnerName = scores[mob].name;
                         }
                     });
 
@@ -1226,9 +1377,13 @@
                         date: new Date().toLocaleDateString()
                     });
 
-                    // Set status to closed
-                    database.ref('rooms/' + roomId + '/status').set('completed');
-                    database.ref('rooms/' + roomId + '/winner').set(winnerMobile);
+                    // Set status to completed and set winner
+                    database.ref('rooms/' + roomId).update({
+                        status: 'completed',
+                        winner: winnerMobile,
+                        winnerName: winnerName,
+                        completedAt: firebase.database.ServerValue.TIMESTAMP
+                    });
                 }
             });
         }
@@ -1356,7 +1511,8 @@
         function checkAndSaveHighScore() {
             if (!currentUserMobile) return;
             
-            if(gameMode === 'pro') {
+            // FIXED: Only save pro score if active room is present
+            if(gameMode === 'pro' && activeRoomId) {
                 saveProScore();
             }
 
@@ -1389,9 +1545,18 @@
             resetGame();
         }
 
+        // NAYA CODE: Back Confirmation aur Quit treatment Logic
+        function confirmBackToMenu() {
+            if (confirm("Kya aap game Quit karna chahte hain? Aapka current score save kiya jayega.")) {
+                // QUIT = Game Over treatment
+                triggerGameOver("quit");
+            }
+        }
+
         function backToMenu() { 
             clearInterval(timerId); 
             checkAndSaveHighScore(); 
+            // FIXED: Reset activeRoomId after saving score
             activeRoomId = null; 
             document.getElementById('mode-overlay').style.display = 'flex'; 
         }
@@ -1513,6 +1678,7 @@
                 fragment.appendChild(cell); squares.push(cell);
             }
             gridDisplay.appendChild(fragment);
+            checkForPossibleMoves(); // Check initial board
         }
 
         function getNewTileValue() {
@@ -1540,7 +1706,34 @@
                     let randomVal = getNewTileValue(); squares[i].innerHTML = randomVal; emptySpaces = true;
                 }
             }
-            updateStyles(); return emptySpaces;
+            updateStyles(); 
+            checkForPossibleMoves(); // Check if any matching moves are left
+            return emptySpaces;
+        }
+
+        // NAYA CODE: Check matching moves logic
+        function checkForPossibleMoves() {
+            for (let i = 0; i < squares.length; i++) {
+                let val = squares[i].innerHTML;
+                if (!val || val === '0') continue;
+
+                let row = Math.floor(i / size);
+                let col = i % size;
+
+                // Check neighbors (Horizontal, Vertical, Diagonal)
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        if (dr === 0 && dc === 0) continue;
+                        let nr = row + dr, nc = col + dc;
+                        if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
+                            let neighborIdx = nr * size + nc;
+                            if (squares[neighborIdx].innerHTML === val) return true; // Found a match
+                        }
+                    }
+                }
+            }
+            triggerGameOver("nomoves"); // No matches found anywhere
+            return false;
         }
 
         function startTimerSystem() { clearInterval(timerId); if (gameMode === 'normal') return; timerId = setInterval(() => { if (!isGameOver) { timeLeft--; timerDisplay.innerHTML = timeLeft; if (timeLeft <= 0) triggerGameOver("timeout"); } }, 1000); }
@@ -1585,7 +1778,22 @@
             isGameOver = true; 
             clearInterval(timerId); 
             checkAndSaveHighScore(); 
-            gameOverMsg.innerHTML = (reason === "timeout") ? "Aapka samay samapt ho gaya!" : "Koi move baki nahi hai!"; 
+
+            if (reason === "timeout") {
+                gameOverMsg.innerHTML = "Aapka samay samapt ho gaya!";
+            } else if (reason === "nomoves") {
+                gameOverMsg.innerHTML = "Koi bhi box same nahi hai! Game Over.";
+            } else if (reason === "quit") {
+                gameOverMsg.innerHTML = "Aapne game Quit kiya. Score save ho gaya hai.";
+            }
+
+            // NAYA CODE: Pro mode check for Restart button
+            if (gameMode === 'pro') {
+                document.getElementById('restart-btn').style.display = 'none';
+            } else {
+                document.getElementById('restart-btn').style.display = 'block';
+            }
+
             gameOverOverlay.style.display = 'flex'; 
         }
 
@@ -1671,6 +1879,7 @@
             updateLevelUI(); timerDisplay.innerHTML = 60; 
             gameOverOverlay.style.display = 'none'; 
             levelUpPopup.style.display = 'none'; 
+            document.getElementById('restart-btn').style.display = 'block'; // Reset to default
             createBoard(); 
             startTimerSystem(); 
         }
